@@ -20,8 +20,21 @@
         .container {
             text-align: center;
             width: 100%;
-            margin-top: 50px;
+            margin-top: 10px;
         }
+
+.guide {
+    display: block;
+    margin-top: 20px; 
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+@media print {
+    .guide {
+        display: none;
+    }
+}
 
         .grid-container {
             display: grid;
@@ -35,7 +48,7 @@
             border: 1px solid red;
             padding: 5px;
             text-align: center;
-            font-size: 16px;
+            font-size: 18px;
             width: 1.1em;
             height: 1.1em;
             display: flex;
@@ -47,32 +60,8 @@
             width: 80%;
             height: 100px;
             margin-bottom: 10px;
+             font-size: 18px; /* 修改这一行 */
         }
-
-        .guide {
-            position: absolute;
-            padding: 10px;
-            background-color: lightblue;
-            border: 1px solid blue;
-            white-space: pre-wrap;
-        }
-
-        @media (min-width: 800px) {
-            .guide {
-                top: 50%;
-                left: 0;
-                transform: translateY(-50%);
-            }
-        }
-
-        @media (max-width: 799px) {
-            .guide {
-                top: 0;
-                left: 50%;
-                transform: translateX(-50%);
-            }
-        }
-
         @media print {
             body {
                 width: 100%;
@@ -131,11 +120,7 @@
 </head>
 
 <body>
-    <div class="guide">
-        “<mark>回车</mark>”“<mark>++</mark>”换 行<br>
-        “<mark>Tab</mark>”空 2 格<br>
-        “<mark>+N+</mark>”空 N 格
-    </div>
+<div class="guide">【回车】【++】换行、【Tab】空2格、【+N+】空N格</div>
     <div class="container">
         <textarea id="input-text" onkeydown="handleKeyDown(event)">+5+关于Y村脱贫攻坚工作的汇报++各位领导、同事：+++2+一、整改建议。1.组织调研。到田间地头去了解情况，走家串户查找问题。+++18+Y村村委+++15+2024年9月27日</textarea>
         <div class="buttons">
