@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线答题卡</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            text-align: center;
+            width: 100%;
+            margin-top: 50px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(25, auto);
+            gap: 5px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .grid-item {
+            border: 1px solid red;
+            padding: 5px;
+            text-align: center;
+            font-size: 16px;
+            width: 1.1em;
+            height: 1.1em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        textarea {
+            width: 80%;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+
+        .guide {
+            position: absolute;
+            padding: 10px;
+            background-color: lightblue;
+            border: 1px solid blue;
+            white-space: pre-wrap;
+        }
+
+        @media (min-width: 800px) {
+            .guide {
+                top: 50%;
+                left: 0;
+                transform: translateY(-50%);
+            }
+        }
+
+        @media (max-width: 799px) {
+            .guide {
+                top: 0;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+        }
+
+        @media print {
+            body {
+                width: 100%;
+                height: auto;
+            }
+
+            .grid-container {
+                width: 100%;
+                grid-template-columns: repeat(25, 1fr);
+                grid-template-rows: auto;
+            }
+
+            .grid-item {
+                width: auto;
+                height: auto;
+                padding: 2px;
+                font-size: 12px;
+            }
+
+            .guide,
+            textarea,
+            .buttons {
+                display: none!important;
+            }
+
+            .container {
+                margin-top: 0;
+            }
+        }
+
+        .buttons {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .buttons button {
+            margin: 0 10px;
+        }
+
+        .large-button {
+            transform: scale(1.5);
+        }
+
+        .count-display {
+            margin-left: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 5px;
+            border: 1px solid #000;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="guide">
+        “<mark>回车</mark>”“<mark>++</mark>”换 行<br>
+        “<mark>Tab</mark>”空 2 格<br>
+        “<mark>+N+</mark>”空 N 格
+    </div>
+    <div class="container">
+        <textarea id="input-text" onkeydown="handleKeyDown(event)">+5+关于Y村脱贫攻坚工作的汇报++各位领导、同事：+++2+一、整改建议。1.组织调研。到田间地头去了解情况，走家串户查找问题。+++18+Y村村委+++15+2024年9月27日</textarea>
+        <div class="buttons">
+            <button onclick="insertText('+++2+')">新段落</button>
+            <button class="large-button" onclick="distributeText()">填入答题纸</button>
+            <button onclick="window.print()">打印</button>
+            <div class="count-display" id="count-display">统计字数: 0</div>
+        </div>
+        <div class="grid-container" id="grid-container"></div>
+    </div>
+    <script>
+        function insertText(text) {
+            const textarea = document.getElementById('input-text');
+            textarea.focus();
+            document.execCommand('insertText', false, text);
+        }
+
+        function handleKeyDown(event) {
+            const textarea = document.getElementById('input-text');
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                insertText('++');
+            } else if (event.key === 'Tab') {
+                event.preventDefault();
+                insertText('+2+');
+            }
+        }
+
+        function distributeText() {
+            const text = document.getElementById('input-text').value;
+            const gridContainer = document.getElementById('grid-container');
+            gridContainer.innerHTML = '';
+            let effectiveLength = 0;
+
+            // 计算有效长度
+            for (let i = 0; i < text.length; i++) {
+                if (text[i] === '+') {
+                    if (text[i + 1] === '+') {
+                        effectiveLength += 25 - (effectiveLength % 25);
+                        i++;
+                    } else if (/\d/.test(text[i + 1])) {
+                        let j = i + 1;
+                        while (j < text.length && text[j] !== '+') {
+                            j++;
+                        }
+                        effectiveLength += parseInt(text.substring(i + 1, j), 10);
+                        i = j;
+                    } else {
+                        effectiveLength++;
+                    }
+                } else {
+                    effectiveLength++;
+                }
+            }
+
+            const numRows = Math.ceil(effectiveLength / 25);
+            for (let i = 0; i < numRows * 25; i++) {
+                const gridItem = document.createElement('div');
+                gridItem.className = 'grid-item';
+                gridContainer.appendChild(gridItem);
+            }
+
+            const gridItems = document.querySelectorAll('.grid-item');
+            let gridIndex = 0;
+            let i = 0;
+
+            while (i < text.length && gridIndex < gridItems.length) {
+                if (text[i] === '+') {
+                    if (text[i + 1] === '+') {
+                        gridIndex = Math.floor(gridIndex / 25) * 25 + 25;
+                        i += 2;
+                    } else if (/\d/.test(text[i + 1])) {
+                        let numStr = '';
+                        let j = i + 1;
+                        while (j < text.length && text[j] !== '+') {
+                            numStr += text[j];
+                            j++;
+                        }
+                        const numSpaces = parseInt(numStr, 10);
+                        for (let k = 0; k < numSpaces; k++) {
+                            if (gridIndex < gridItems.length) {
+                                gridItems[gridIndex].innerText = ' ';
+                                gridIndex++;
+                            }
+                        }
+                        i = j + 1;
+                    } else {
+                        gridItems[gridIndex].innerText = text[i];
+                        gridIndex++;
+                        i++;
+                    }
+                } else {
+                    if (gridIndex % 25 === 0 && /[，。！？；：]/.test(text[i])) {
+                        gridItems[gridIndex - 1].innerText += text[i];
+                    } else {
+                        gridItems[gridIndex].innerText = text[i];
+                        gridIndex++;
+                    }
+                    i++;
+                }
+            }
+
+            const countDisplay = document.getElementById('count-display');
+            countDisplay.innerText = `表格计数: ${gridIndex}`;
+        }
+    </script>
+</body>
+
+</html>
