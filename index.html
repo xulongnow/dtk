@@ -227,6 +227,10 @@
                         gridIndex++;
                         i++;
                     }
+                } else if (/\d\./.test(text.substring(i, i + 2))) {
+                    gridItems[gridIndex].innerText = text.substring(i, i + 2);
+                    gridIndex++;
+                    i += 2;
                 } else {
                     if (gridIndex % 25 === 0 && /[，。！？；：]/.test(text[i])) {
                         gridItems[gridIndex - 1].innerText += text[i];
