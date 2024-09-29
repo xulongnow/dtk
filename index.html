@@ -169,6 +169,9 @@
             } else if (event.key === 'Tab') {
                 event.preventDefault();
                 insertText('+2+');
+    } else if (event.key === ' ') {
+        event.preventDefault();
+        insertText('+++2+');
             }
         }
 
@@ -179,24 +182,28 @@
             let effectiveLength = 0;
 
             for (let i = 0; i < text.length; i++) {
-                if (text[i] === '+') {
-                    if (text[i + 1] === '+') {
-                        effectiveLength += 25 - (effectiveLength % 25);
-                        i++;
-                    } else if (/\d/.test(text[i + 1])) {
-                        let j = i + 1;
-                        while (j < text.length && text[j] !== '+') {
-                            j++;
-                        }
-                        effectiveLength += parseInt(text.substring(i + 1, j), 10);
-                        i = j;
-                    } else {
-                        effectiveLength++;
-                    }
-                } else {
-                    effectiveLength++;
-                }
+    if (text[i] === '+') {
+        if (text[i + 1] === '+') {
+            effectiveLength += 25 - (effectiveLength % 25);
+            i++;
+        } else if (/\d/.test(text[i + 1])) {
+            let j = i + 1;
+            while (j < text.length && text[j] !== '+') {
+                j++;
             }
+            effectiveLength += parseInt(text.substring(i + 1, j), 10);
+            i = j;
+        } else {
+            effectiveLength++;
+        }
+    } else if (/\d/.test(text[i]) && /\d/.test(text[i + 1])) {
+        effectiveLength++;
+        i++; // 跳过下一个数字，因为它已经被合并
+    } else {
+        effectiveLength++;
+    }
+}
+
 
             const numRows = Math.ceil(effectiveLength / 25);
             for (let i = 0; i < numRows * 25; i++) {
@@ -215,44 +222,57 @@
             let i = 0;
 
             while (i < text.length && gridIndex < gridItems.length) {
-                if (text[i] === '+') {
-                    if (text[i + 1] === '+') {
-                        gridIndex = Math.floor(gridIndex / 25) * 25 + 25;
-                        i += 2;
-                    } else if (/\d/.test(text[i + 1])) {
-                        let numStr = '';
-                        let j = i + 1;
-                        while (j < text.length && text[j] !== '+') {
-                            numStr += text[j];
-                            j++;
-                        }
-                        const numSpaces = parseInt(numStr, 10);
-                        for (let k = 0; k < numSpaces; k++) {
-                            if (gridIndex < gridItems.length) {
-                                gridItems[gridIndex].innerText = ' ';
-                                gridIndex++;
-                            }
-                        }
-                        i = j + 1;
-                    } else {
-                        gridItems[gridIndex].innerText = text[i];
-                        gridIndex++;
-                        i++;
-                    }
-                } else if (/\d\./.test(text.substring(i, i + 2))) {
-                    gridItems[gridIndex].innerText = text.substring(i, i + 2);
+    if (text[i] === '+') {
+        if (text[i + 1] === '+') {
+            gridIndex = Math.floor(gridIndex / 25) * 25 + 25;
+            i += 2;
+        } else if (/\d/.test(text[i + 1])) {
+            let numStr = '';
+            let j = i + 1;
+            while (j < text.length && text[j] !== '+') {
+                numStr += text[j];
+                j++;
+            }
+            const numSpaces = parseInt(numStr, 10);
+            for (let k = 0; k < numSpaces; k++) {
+                if (gridIndex < gridItems.length) {
+                    gridItems[gridIndex].innerText = ' ';
                     gridIndex++;
-                    i += 2;
-                } else {
-                    if (gridIndex % 25 === 0 && /[，。！？；：]/.test(text[i])) {
-                        gridItems[gridIndex - 1].innerText += text[i];
-                    } else {
-                        gridItems[gridIndex].innerText = text[i];
-                        gridIndex++;
-                    }
-                    i++;
                 }
             }
+            i = j + 1;
+        } else {
+            gridItems[gridIndex].innerText = text[i];
+            gridIndex++;
+            i++;
+        }
+   } else if (/\d\./.test(text.substring(i, i + 2))) {
+        gridItems[gridIndex].innerText = text.substring(i, i + 2);
+        gridIndex++;
+        i += 2;
+    } else if (/\d/.test(text[i]) && /\d/.test(text[i + 1])) {
+        gridItems[gridIndex].innerText = text.substring(i, i + 2);
+        gridIndex++;
+        i += 2;
+    } else if (/\d/.test(text[i])) {
+        let numStr = '';
+        while (i < text.length && /\d/.test(text[i])) {
+            numStr += text[i];
+            i++;
+        }
+        gridItems[gridIndex].innerText = numStr;
+        gridIndex++;
+    } else {
+        if (gridIndex % 25 === 0 && /[，。！？；：]/.test(text[i])) {
+            gridItems[gridIndex - 1].innerText += text[i];
+        } else {
+            gridItems[gridIndex].innerText = text[i];
+            gridIndex++;
+        }
+        i++;
+    }
+}
+
 
             const countDisplay = document.getElementById('count-display');
             countDisplay.innerText = `表格计数: ${gridIndex}`;
