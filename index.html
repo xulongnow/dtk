@@ -30,6 +30,7 @@
 +17+Y村村委
 +15+2024年9月27日</textarea>
         <div class="buttons">
+            <button onclick="clearPlusN()">清除+N+</button> <!-- 新增按钮 -->
             <button onclick="clearSpaces()">清除空格</button>
             <button onclick="clearInput()">清空</button>
             <button onclick="distributeText()">填入答题纸</button>
@@ -44,6 +45,7 @@
             textarea.focus();
             document.execCommand('insertText', false, text);
         }
+
         function handleKeyDown(event) {
             const textarea = document.getElementById('input-text');
             if (event.key === 'Enter') {
@@ -57,16 +59,25 @@
                 insertText(' ');
             }
         }
+
         function clearSpaces() {
             const textarea = document.getElementById('input-text');
             textarea.value = textarea.value.replace(/ /g, '');
             distributeText(); // 更新答题纸
         }
+
         function clearInput() {
             const textarea = document.getElementById('input-text');
             textarea.value = '';
             distributeText(); // 更新答题纸
         }
+
+        function clearPlusN() {
+            const textarea = document.getElementById('input-text');
+            textarea.value = textarea.value.replace(/\+\d+\+/g, '');
+            distributeText(); // 更新答题纸
+        }
+
         function distributeText() {
             const text = document.getElementById('input-text').value;
             const gridContainer = document.getElementById('grid-container');
