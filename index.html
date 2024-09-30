@@ -151,7 +151,7 @@
                         i++;
                     }
                 } else {
-                    if (gridIndex % 25 === 0 && /[，。！？；：]/.test(text[i])) {
+                    if (gridIndex % 25 === 0 && /[，。！？；：’”、）》,.!?;:)]/.test(text[i])) {
                         gridItems[gridIndex - 1].innerText += text[i];
                     } else {
                         gridItems[gridIndex].innerText = text[i];
