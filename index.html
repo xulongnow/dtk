@@ -23,13 +23,14 @@
 <body>
     <div class="guide">【回车键】换行、【空格键】空1格、【Tab键】空2格、【+N+】空N格</div>
     <div class="container">
-        <textarea id="input-text" oninput="distributeText()" onkeydown="handleKeyDown(event)">+4+关于加强凤凰河流域文化建设的建议
-尊敬的领导：
-+2+一、凤凰河流域的文化建设意义重大：1.能传承保护文化遗产。2.能反哺生态环境。3.带动沿岸经济文化发展。+2+二、目前仍存在的问题：1.缺乏统一的文化核心内容。2.地域间部门间未形成合力。3.未融入群众生活。
-+18+叶某某
-+16+2000年1月1日</textarea>
+        <textarea id="input-text" oninput="distributeText()" onkeydown="handleKeyDown(event)">+5+关于Y村脱贫攻坚工作的汇报
+各位领导、同事：
++2+一、整改建议。1.组织调研。到田间地头去了解情况，走家串户查找问题。
++17+Y村村委
++15+2024年9月27日</textarea>
         <div class="buttons">
             <button onclick="clearPlusN()">清除+N+</button> <!-- 新增按钮 -->
+            <button onclick="clearNewLines()">清除换行</button>
             <button onclick="clearSpaces()">清除空格</button>
             <button onclick="clearInput()">清空</button>
             <button onclick="distributeText()">填入答题纸</button>
@@ -44,6 +45,12 @@
             textarea.focus();
             document.execCommand('insertText', false, text);
         }
+
+function clearNewLines() {
+    const textarea = document.getElementById('input-text');
+    textarea.value = textarea.value.replace(/\n/g, '');
+    distributeText(); // 更新答题纸
+}
 
         function handleKeyDown(event) {
             const textarea = document.getElementById('input-text');
