@@ -46,11 +46,11 @@
             document.execCommand('insertText', false, text);
         }
 
-function clearNewLines() {
-    const textarea = document.getElementById('input-text');
-    textarea.value = textarea.value.replace(/\n/g, '');
-    distributeText(); // 更新答题纸
-}
+        function clearNewLines() {
+            const textarea = document.getElementById('input-text');
+            textarea.value = textarea.value.replace(/\n/g, '');
+            distributeText(); // 更新答题纸
+        }
 
         function handleKeyDown(event) {
             const textarea = document.getElementById('input-text');
@@ -158,6 +158,8 @@ function clearNewLines() {
                     }
                 } else {
                     if (gridIndex % 25 === 0 && /[，。！？；：’”、）》,.!?;:)]/.test(text[i])) {
+                        gridItems[gridIndex - 1].innerText += text[i];
+                    } else if (gridIndex > 0 && /[》”]/.test(gridItems[gridIndex - 1].innerText) && /[、，。：；？！,.?!;:]/.test(text[i])) {
                         gridItems[gridIndex - 1].innerText += text[i];
                     } else {
                         gridItems[gridIndex].innerText = text[i];
