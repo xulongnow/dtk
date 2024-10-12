@@ -23,7 +23,7 @@
 <body>
     <div class="guide">【回车键】换行、【空格键】空1格、【Tab键】空2格、【+N+】空N格</div>
     <div class="container">
-        <textarea id="input-text" oninput="distributeText()" onkeydown="handleKeyDown(event)">+5+关于Y村脱贫攻坚工作的汇报
+        <textarea id="input-text" oninput="distributeTextWithDelay()" onkeydown="handleKeyDown(event)">+5+关于Y村脱贫攻坚工作的汇报
 各位领导、同事：
 +2+一、整改建议。1.组织调研。到田间地头去了解情况，走家串户查找问题。
 +17+Y村村委
@@ -40,6 +40,9 @@
         <div class="grid-container" id="grid-container"></div>
     </div>
     <script>
+        let updateTimeout;
+        const delay = 400; // 延迟时间，单位为毫秒
+
         function insertText(text) {
             const textarea = document.getElementById('input-text');
             textarea.focus();
@@ -82,6 +85,11 @@
             const textarea = document.getElementById('input-text');
             textarea.value = textarea.value.replace(/\+\d+\+/g, '');
             distributeText(); // 更新答题纸
+        }
+
+        function distributeTextWithDelay() {
+            clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(distributeText, delay);
         }
 
         function distributeText() {
