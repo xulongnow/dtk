@@ -18,18 +18,30 @@
         .buttons { margin-top: 10px; display: flex; justify-content: center; align-items: center; }
         .buttons button { margin: 0 10px; }
         .count-display { margin-left: 10px; font-size: 14px; font-weight: bold; padding: 5px; border: 1px solid #000; border-radius: 5px; background-color: #f0f0f0; }
+        .input-container { display: flex; flex-direction: column; align-items: center; }
+        .size-buttons { display: flex; justify-content: center; margin-bottom: 10px; }
+        .size-buttons button { margin: 0 5px; }
     </style>
 </head>
 <body>
     <div class="guide">【回车键】换行、【空格键】空1格、【Tab键】空2格、【+N+】空N格</div>
     <div class="container">
-        <textarea id="input-text" oninput="distributeTextWithDelay()" onkeydown="handleKeyDown(event)">+5+关于Y村脱贫攻坚工作的汇报
+        <div class="input-container">
+            <div class="size-buttons">
+                <button onclick="resetTextarea()">复原</button>
+                <button onclick="adjustTextarea('wide')">宽</button>
+                <button onclick="adjustTextarea('narrow')">窄</button>
+                <button onclick="adjustTextarea('tall')">高</button>
+                <button onclick="adjustTextarea('short')">低</button>
+            </div>
+            <textarea id="input-text" oninput="distributeTextWithDelay()" onkeydown="handleKeyDown(event)">+5+关于Y村脱贫攻坚工作的汇报
 各位领导、同事：
-+2+一、整改建议。1.组织调研。到田间地头去了解情况，走家串户查找问题。
++2+一、整改建议。1.组织调研到“田间地头”，了解情况，走家串户查找问题。
 +17+Y村村委
 +15+2024年9月27日</textarea>
+        </div>
         <div class="buttons">
-            <button onclick="clearPlusN()">清除+N+</button> <!-- 新增按钮 -->
+            <button onclick="clearPlusN()">清除+N+</button>
             <button onclick="clearNewLines()">清除换行</button>
             <button onclick="clearSpaces()">清除空格</button>
             <button onclick="clearInput()">清空</button>
@@ -41,7 +53,9 @@
     </div>
     <script>
         let updateTimeout;
-        const delay = 400; // 延迟时间，单位为毫秒
+        const delay = 500; // 延迟时间，单位为毫秒
+        const initialWidth = '40%';
+        const initialHeight = '250px';
 
         function insertText(text) {
             const textarea = document.getElementById('input-text');
@@ -145,7 +159,7 @@
                     i += 2;
                 } else if (text[i] === '+') {
                     if (/\d/.test(text[i + 1])) {
-                        let numStr = '';
+                                                let numStr = '';
                         let j = i + 1;
                         while (j < text.length && text[j] !== '+') {
                             numStr += text[j];
@@ -167,7 +181,7 @@
                 } else {
                     if (gridIndex % 25 === 0 && /[，。！？；：’”、）》,.!?;:)]/.test(text[i])) {
                         gridItems[gridIndex - 1].innerText += text[i];
-                    } else if (gridIndex > 0 && /[》”]/.test(gridItems[gridIndex - 1].innerText) && /[、，。：；？！,.?!;:]/.test(text[i])) {
+                    } else if (gridIndex > 0 && /[》”"]/.test(gridItems[gridIndex - 1].innerText) && /[、，。：；？！,.?!;:]/.test(text[i])) {
                         gridItems[gridIndex - 1].innerText += text[i];
                     } else {
                         gridItems[gridIndex].innerText = text[i];
@@ -179,6 +193,33 @@
             const countDisplay = document.getElementById('count-display');
             countDisplay.innerText = `表格计数: ${gridIndex}`;
         }
+
+        function adjustTextarea(action) {
+            const textarea = document.getElementById('input-text');
+            const step = 20; // 每次调整的像素值
+            const currentWidth = parseInt(window.getComputedStyle(textarea).width, 10);
+            const currentHeight = parseInt(window.getComputedStyle(textarea).height, 10);
+
+            if (action === 'narrow') {
+                textarea.style.width = `${currentWidth - step}px`;
+                textarea.style.marginLeft = `${step / 2}px`;
+            } else if (action === 'wide') {
+                textarea.style.width = `${currentWidth + step}px`;
+                textarea.style.marginLeft = `-${step / 2}px`;
+            } else if (action === 'short') {
+                textarea.style.height = `${currentHeight - step}px`;
+            } else if (action === 'tall') {
+                textarea.style.height = `${currentHeight + step}px`;
+            }
+        }
+
+        function resetTextarea() {
+            const textarea = document.getElementById('input-text');
+            textarea.style.width = initialWidth;
+            textarea.style.height = initialHeight;
+            textarea.style.marginLeft = '0';
+        }
+
         distributeText();
     </script>
 </body>
