@@ -14,7 +14,7 @@
         .grid-item:nth-child(100n) { border-right: 2px solid red; position: relative; }
         .grid-item:nth-child(100n)::after { content: attr(data-index); color: red; font-size: 12px; font-weight: normal; position: absolute; right: -22px; bottom: -10px; }
         textarea { width: 40%; height: 250px; margin-bottom: 10px; font-size: 18px; }
-        @media print { body { width: 100%; height: auto; } .grid-container { width: 100%; grid-template-columns: repeat(25, 1fr); grid-template-rows: auto; } .grid-item { width: auto; height: auto; padding: 2px; font-size: 12px; } .guide, textarea, .buttons { display: none!important; } .container { margin-top: 0; } }
+        @media print { body { width: 100%; height: auto; } .grid-container { width: 100%; grid-template-columns: repeat(25, 1fr); grid-template-rows: auto; } .grid-item { width: auto; height: auto; padding: 2px; font-size: 12px; } .guide, textarea, .buttons, .adjust-buttons { display: none!important; } .container { margin-top: 0; } }
         .buttons { margin-top: 10px; display: flex; justify-content: center; align-items: center; }
         .buttons button { margin: 0 10px; }
         .count-display { margin-left: 10px; font-size: 14px; font-weight: bold; padding: 5px; border: 1px solid #000; border-radius: 5px; background-color: #f0f0f0; }
@@ -28,7 +28,7 @@
     <div class="guide">【回车键】换行、【空格键】空1格、【Tab键】空2格、【+N+】空N格</div>
     <div class="container">
         <div class="input-container">
-            <div class="size-buttons">
+            <div class="size-buttons adjust-buttons">
                 <button onclick="resetTextarea()">复原</button>
                 <button onclick="adjustTextarea('wide')">宽</button>
                 <button onclick="adjustTextarea('narrow')">窄</button>
