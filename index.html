@@ -24,7 +24,7 @@
     </style>
 </head>
 <body>
-    <div class="guide">网站不存储任何信息，仅用于考试答题模拟</div>
+    <div class="guide">仅用于考试答题模拟，不具备在线保存功能，小心内容丢失</div>
     <div class="guide">【回车键】换行、【空格键】空1格、【Tab键】空2格、【+N+】空N格</div>
     <div class="container">
         <div class="input-container">
@@ -42,11 +42,11 @@
 +15+2024年9月27日</textarea>
         </div>
         <div class="buttons">
-            <button id="toggle-auto-input" onclick="toggleAutoInput()">自动输入·开</button>
             <button onclick="clearPlusN()">清除+N+</button>
             <button onclick="clearNewLines()">清除换行</button>
             <button onclick="clearSpaces()">清除空格</button>
             <button onclick="clearInput()">清空</button>
+            <button id="toggle-auto-input" onclick="toggleAutoInput()">自动输入·开</button>
             <button onclick="distributeText()">填入答题纸</button>
             <button onclick="window.print()">打印</button>
             <div class="count-display" id="count-display">统计字数: 0</div>
