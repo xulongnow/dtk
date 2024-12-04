@@ -159,7 +159,7 @@
             gridIndex = Math.floor(gridIndex / 25) * 25 + 25;
         }
         i++;
-    } else if (/[a-zA-Z0-9]/.test(text[i]) && /[a-zA-Z0-9]/.test(text[i + 1])) {
+    } else if (/[a-zA-Z0-9]/.test(text[i]) && /[a-zA-Z0-9.]/.test(text[i + 1])) {
         gridItems[gridIndex].innerText = text.substring(i, i + 2);
         gridIndex++;
         i += 2;
