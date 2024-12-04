@@ -24,7 +24,7 @@
     </style>
 </head>
 <body>
-    <div class="guide">仅用于考试答题模拟，不具备在线保存功能，请及时保存</div>
+    <div class="guide">仅用于考试答题模拟，无在线缓存功能，请及时保存</div>
     <div class="guide">【回车键】换行、【空格键】空1格、【Tab键】空2格、【+N+】空N格</div>
     <div class="container">
         <div class="input-container">
@@ -42,12 +42,13 @@
 +15+2024年9月27日</textarea>
         </div>
         <div class="buttons">
-            <button onclick="clearPlusN()">清除+N+</button>
-            <button onclick="clearNewLines()">清除换行</button>
-            <button onclick="clearSpaces()">清除空格</button>
-            <button onclick="clearInput()">清空</button>
+            <button onclick="executeWithDelay(clearPlusN)">清除+N+</button>
+            <button onclick="executeWithDelay(clearNewLines)">清除换行</button>
+            <button onclick="executeWithDelay(clearSpaces)">清除空格</button>
+            <button onclick="executeWithDelay(clearInput)">清空</button>
             <button id="toggle-auto-input" onclick="toggleAutoInput()">自动输入·开</button>
             <button onclick="distributeText()">填入答题纸</button>
+            <button onclick="downloadText()">下载TXT</button>
             <button onclick="window.print()">打印</button>
             <div class="count-display" id="count-display">统计字数: 0</div>
         </div>
@@ -165,94 +166,115 @@
                     gridIndex++;
                     i += 2;
                 } else if (/[a-zA-Z]/.test(text[i]) && /[a-zA-Z]/.test(text[i + 1])) {
-            gridItems[gridIndex].innerText = text.substring(i, i + 2);
-            gridIndex++;
-            i += 2;
-        } else if (text[i] === '+') {
-            if (/\d/.test(text[i + 1])) {
-                let numStr = '';
-                let j = i + 1;
-                while (j < text.length && text[j] !== '+') {
-                    numStr += text[j];
-                    j++;
-                }
-                const numSpaces = parseInt(numStr, 10);
-                for (let k = 0; k < numSpaces; k++) {
-                    if (gridIndex < gridItems.length) {
-                        gridItems[gridIndex].innerText = ' ';
+                    gridItems[gridIndex].innerText = text.substring(i, i + 2);
+                    gridIndex++;
+                    i += 2;
+                } else if (text[i] === '+') {
+                    if (/\d/.test(text[i + 1])) {
+                        let numStr = '';
+                        let j = i + 1;
+                        while (j < text.length && text[j] !== '+') {
+                            numStr += text[j];
+                            j++;
+                        }
+                        const numSpaces = parseInt(numStr, 10);
+                        for (let k = 0; k < numSpaces; k++) {
+                            if (gridIndex < gridItems.length) {
+                                gridItems[gridIndex].innerText = ' ';
+                                gridIndex++;
+                            }
+                        }
+                        i = j + 1;
+                    } else {
+                        gridItems[gridIndex].innerText = text[i];
+                        gridIndex++;
+                        i++;
+                    }
+                } else {
+                    if (gridIndex % 25 === 0 && /[，。！？；：’”、）》,.!?;:)]/.test(text[i])) {
+                        gridItems[gridIndex - 1].innerText += text[i];
+                    } else if (gridIndex > 0 && /[》”"]/.test(gridItems[gridIndex - 1].innerText) && /[、，。：；？！,.?!;:]/.test(text[i])) {
+                        gridItems[gridIndex - 1].innerText += text[i];
+                    } else {
+                        gridItems[gridIndex].innerText = text[i];
                         gridIndex++;
                     }
+                    i++;
                 }
-                i = j + 1;
-            } else {
-                gridItems[gridIndex].innerText = text[i];
-                gridIndex++;
-                i++;
             }
-        } else {
-            if (gridIndex % 25 === 0 && /[，。！？；：’”、）》,.!?;:)]/.test(text[i])) {
-                gridItems[gridIndex - 1].innerText += text[i];
-            } else if (gridIndex > 0 && /[》”"]/.test(gridItems[gridIndex - 1].innerText) && /[、，。：；？！,.?!;:]/.test(text[i])) {
-                gridItems[gridIndex - 1].innerText += text[i];
-            } else {
-                gridItems[gridIndex].innerText = text[i];
-                gridIndex++;
-            }
-            i++;
+            const countDisplay = document.getElementById('count-display');
+            countDisplay.innerText = `表格计数: ${gridIndex}`;
         }
-    }
-    const countDisplay = document.getElementById('count-display');
-    countDisplay.innerText = `表格计数: ${gridIndex}`;
-}
 
-function toggleAutoInput() {
-    autoInputEnabled = !autoInputEnabled;
-    const button = document.getElementById('toggle-auto-input');
-    if (autoInputEnabled) {
-        delay = 500;
-        button.innerText = '自动输入·开';
-    } else {
-        delay = 24 * 60 * 60 * 1000; // 24小时
-        button.innerText = '自动输入·关';
-    }
-    alert(`已切换为 ${button.innerText}`);
-}
+        function toggleAutoInput() {
+            autoInputEnabled = !autoInputEnabled;
+            const button = document.getElementById('toggle-auto-input');
+            if (autoInputEnabled) {
+                delay = 500;
+                button.innerText = '自动输入·开';
+            } else {
+                delay = 24 * 60 * 60 * 1000; // 24小时
+                button.innerText = '自动输入·关';
+            }
+            alert(`已切换为 ${button.innerText}`);
+        }
 
-window.onload = function() {
-    const savedText = localStorage.getItem('savedText');
-    if (savedText) {
-        document.getElementById('input-text').value = savedText;
+        function executeWithDelay(callback) {
+            if (autoInputEnabled) {
+                callback();
+            } else {
+                setTimeout(callback, delay);
+            }
+        }
+
+        function downloadText() {
+            const text = document.getElementById('input-text').value;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'input-text.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        window.onload = function() {
+            const savedText = localStorage.getItem('savedText');
+            if (savedText) {
+                document.getElementById('input-text').value = savedText;
+                distributeText();
+            }
+        };
+
+        function adjustTextarea(action) {
+            const textarea = document.getElementById('input-text');
+            const step = 20; // 每次调整的像素值
+            const currentWidth = parseInt(window.getComputedStyle(textarea).width, 10);
+            const currentHeight = parseInt(window.getComputedStyle(textarea).height, 10);
+
+            if (action === 'narrow') {
+                textarea.style.width = `${currentWidth - step}px`;
+                textarea.style.marginLeft = `${step / 2}px`;
+            } else if (action === 'wide') {
+                textarea.style.width = `${currentWidth + step}px`;
+                textarea.style.marginLeft = `-${step / 2}px`;
+            } else if (action === 'short') {
+                textarea.style.height = `${currentHeight - step}px`;
+            } else if (action === 'tall') {
+                textarea.style.height = `${currentHeight + step}px`;
+            }
+        }
+
+        function resetTextarea() {
+            const textarea = document.getElementById('input-text');
+            textarea.style.width = initialWidth;
+            textarea.style.height = initialHeight;
+            textarea.style.marginLeft = '0';
+        }
+
         distributeText();
-    }
-};
-
-function adjustTextarea(action) {
-    const textarea = document.getElementById('input-text');
-    const step = 20; // 每次调整的像素值
-    const currentWidth = parseInt(window.getComputedStyle(textarea).width, 10);
-    const currentHeight = parseInt(window.getComputedStyle(textarea).height, 10);
-
-    if (action === 'narrow') {
-        textarea.style.width = `${currentWidth - step}px`;
-        textarea.style.marginLeft = `${step / 2}px`;
-    } else if (action === 'wide') {
-        textarea.style.width = `${currentWidth + step}px`;
-        textarea.style.marginLeft = `-${step / 2}px`;
-    } else if (action === 'short') {
-        textarea.style.height = `${currentHeight - step}px`;
-    } else if (action === 'tall') {
-        textarea.style.height = `${currentHeight + step}px`;
-    }
-}
-
-function resetTextarea() {
-    const textarea = document.getElementById('input-text');
-    textarea.style.width = initialWidth;
-    textarea.style.height = initialHeight;
-    textarea.style.marginLeft = '0';
-}
-
-distributeText();
-</script>
+    </script>
 </body>
 </html>
