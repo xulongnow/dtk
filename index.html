@@ -154,54 +154,48 @@
             let gridIndex = 0;
             let i = 0;
             while (i < text.length && gridIndex < gridItems.length) {
-                if (text[i] === '\n') {
-                    gridIndex = Math.floor(gridIndex / 25) * 25 + 25;
-                    i++;
-                } else if (/\d\./.test(text.substring(i, i + 2))) {
-                    gridItems[gridIndex].innerText = text.substring(i, i + 2);
+    if (text[i] === '\n') {
+        if (gridIndex % 25 !== 0) {
+            gridIndex = Math.floor(gridIndex / 25) * 25 + 25;
+        }
+        i++;
+    } else if (/[a-zA-Z0-9]/.test(text[i]) && /[a-zA-Z0-9]/.test(text[i + 1])) {
+        gridItems[gridIndex].innerText = text.substring(i, i + 2);
+        gridIndex++;
+        i += 2;
+    } else if (text[i] === '+') {
+        if (/\d/.test(text[i + 1])) {
+            let numStr = '';
+            let j = i + 1;
+            while (j < text.length && text[j] !== '+') {
+                numStr += text[j];
+                j++;
+            }
+            const numSpaces = parseInt(numStr, 10);
+            for (let k = 0; k < numSpaces; k++) {
+                if (gridIndex < gridItems.length) {
+                    gridItems[gridIndex].innerText = ' ';
                     gridIndex++;
-                    i += 2;
-                } else if (/\d/.test(text[i]) && /\d/.test(text[i + 1])) {
-                    gridItems[gridIndex].innerText = text.substring(i, i + 2);
-                    gridIndex++;
-                    i += 2;
-                } else if (/[a-zA-Z]/.test(text[i]) && /[a-zA-Z]/.test(text[i + 1])) {
-                    gridItems[gridIndex].innerText = text.substring(i, i + 2);
-                    gridIndex++;
-                    i += 2;
-                } else if (text[i] === '+') {
-                    if (/\d/.test(text[i + 1])) {
-                        let numStr = '';
-                        let j = i + 1;
-                        while (j < text.length && text[j] !== '+') {
-                            numStr += text[j];
-                            j++;
-                        }
-                        const numSpaces = parseInt(numStr, 10);
-                        for (let k = 0; k < numSpaces; k++) {
-                            if (gridIndex < gridItems.length) {
-                                gridItems[gridIndex].innerText = ' ';
-                                gridIndex++;
-                            }
-                        }
-                        i = j + 1;
-                    } else {
-                        gridItems[gridIndex].innerText = text[i];
-                        gridIndex++;
-                        i++;
-                    }
-                } else {
-                    if (gridIndex % 25 === 0 && /[，。！？；：’”、）》,.!?;:)]/.test(text[i])) {
-                        gridItems[gridIndex - 1].innerText += text[i];
-                    } else if (gridIndex > 0 && /[》”"]/.test(gridItems[gridIndex - 1].innerText) && /[、，。：；？！,.?!;:]/.test(text[i])) {
-                        gridItems[gridIndex - 1].innerText += text[i];
-                    } else {
-                        gridItems[gridIndex].innerText = text[i];
-                        gridIndex++;
-                    }
-                    i++;
                 }
             }
+            i = j + 1;
+        } else {
+            gridItems[gridIndex].innerText = text[i];
+            gridIndex++;
+            i++;
+        }
+    } else {
+        if (gridIndex % 25 === 0 && /[，。！？；：’”、）》,.!?;:)]/.test(text[i])) {
+            gridItems[gridIndex - 1].innerText += text[i];
+        } else if (gridIndex > 0 && /[》”"]/.test(gridItems[gridIndex - 1].innerText) && /[、，。：；？！,.?!;:]/.test(text[i])) {
+            gridItems[gridIndex - 1].innerText += text[i];
+        } else {
+            gridItems[gridIndex].innerText = text[i];
+            gridIndex++;
+        }
+        i++;
+    }
+}
             const countDisplay = document.getElementById('count-display');
             countDisplay.innerText = `表格计数: ${gridIndex}`;
         }
