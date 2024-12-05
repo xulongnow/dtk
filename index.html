@@ -218,17 +218,32 @@
         }
 
         function downloadText() {
-            const text = document.getElementById('input-text').value;
-            const blob = new Blob([text], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'input-text.txt';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
+    const text = document.getElementById('input-text').value; // 获取输入框中的文本内容
+    const blob = new Blob([text], { type: 'text/plain' }); // 创建一个包含文本内容的Blob对象
+    const url = URL.createObjectURL(blob); // 生成一个URL来表示Blob对象
+
+    // 获取当前日期和时间
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+
+    // 获取输入框前8个汉字
+    const prefix = text.substring(0, 8);
+
+    // 设置下载文件名
+    const fileName = `${year}${month}${day}${hours}${minutes}_${prefix}.txt`;
+
+    const a = document.createElement('a'); // 创建一个隐藏的链接元素
+    a.href = url; // 设置链接的href属性为生成的URL
+    a.download = fileName; // 设置下载文件的名称
+    document.body.appendChild(a); // 将链接元素添加到文档中
+    a.click(); // 模拟点击链接，触发下载
+    document.body.removeChild(a); // 下载完成后移除链接元素
+    URL.revokeObjectURL(url); // 释放生成的URL
+}
 
         window.onload = function() {
             const savedText = localStorage.getItem('savedText');
