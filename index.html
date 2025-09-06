@@ -4,6 +4,17 @@
   <meta charset="UTF-8">
   <title>在线答题卡丨申论格子纸语文作文纸</title>
   <style>
+    /* 新增错误提示样式 */
+    .error-message {
+      color: #d9534f;
+      background-color: #f2dede;
+      border: 1px solid #ebccd1;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+      display: none;
+    }
+    
     /* 打印页面全局边距，保障打印内容不裁切 */
     @page { margin: 10mm; }
     body {
@@ -29,7 +40,7 @@
     }
     @media print {
       /* 打印时隐藏不相关元素 */
-      .guide, textarea, .buttons, .adjust-buttons {
+      .guide, textarea, .buttons, .adjust-buttons, .error-message {
         display: none !important;
       }
       body {
@@ -148,7 +159,8 @@
 </head>
 <body>
   <div class="guide">仅用于考试答题模拟，无在线缓存功能，请及时保存</div>
-  <div class="guide">【回车键】换行、【空格键】空1格、【Tab键】空2格、【+N+】空N格</div>
+  <div class="guide">【回车键】换行（自动空2格）、【空格键】空1格、【Tab键】空2格、【+N+】空N格</div>
+  <div class="error-message" id="error-message"></div>
   <div class="container">
     <div class="input-container">
       <div class="size-buttons adjust-buttons">
@@ -184,68 +196,232 @@
     const initialWidth = '40%';
     const initialHeight = '250px';
 
+    // 新增：错误消息显示函数
+    function showError(message) {
+      const errorElement = document.getElementById('error-message');
+      errorElement.innerText = message;
+      errorElement.style.display = 'block';
+      
+      // 5秒后自动隐藏错误信息
+      setTimeout(() => {
+        errorElement.style.display = 'none';
+      }, 5000);
+    }
+
     function insertText(text) {
-      const textarea = document.getElementById('input-text');
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const value = textarea.value;
-      textarea.value = value.slice(0, start) + text + value.slice(end);
-      textarea.selectionStart = textarea.selectionEnd = start + text.length;
-      textarea.focus();
+      try {
+        const textarea = document.getElementById('input-text');
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const value = textarea.value;
+        textarea.value = value.slice(0, start) + text + value.slice(end);
+        textarea.selectionStart = textarea.selectionEnd = start + text.length;
+        textarea.focus();
+      } catch (error) {
+        showError(`插入文本失败: ${error.message}`);
+      }
     }
 
     function handleKeyDown(event) {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        insertText('\n');
-        distributeTextWithDelay();
-      } else if (event.key === 'Tab') {
-        event.preventDefault();
-        insertText('+2+');
-        distributeTextWithDelay();
-      } else if (event.key === ' ') {
-        event.preventDefault();
-        insertText(' ');
-        distributeTextWithDelay();
+      try {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          // 修改：回车时自动添加换行符和+2+指令
+          insertText('\n+2+');
+          distributeTextWithDelay();
+        } else if (event.key === 'Tab') {
+          event.preventDefault();
+          insertText('+2+');
+          distributeTextWithDelay();
+        } else if (event.key === ' ') {
+          event.preventDefault();
+          insertText(' ');
+          distributeTextWithDelay();
+        }
+      } catch (error) {
+        showError(`按键处理错误: ${error.message}`);
       }
     }
 
     function clearNewLines() {
-      const textarea = document.getElementById('input-text');
-      textarea.value = textarea.value.replace(/\n/g, '');
-      distributeTextWithDelay();
+      try {
+        const textarea = document.getElementById('input-text');
+        textarea.value = textarea.value.replace(/\n/g, '');
+        distributeTextWithDelay();
+      } catch (error) {
+        showError(`清除换行失败: ${error.message}`);
+      }
     }
 
     function clearSpaces() {
-      const textarea = document.getElementById('input-text');
-      textarea.value = textarea.value.replace(/ /g, '');
-      distributeTextWithDelay();
+      try {
+        const textarea = document.getElementById('input-text');
+        textarea.value = textarea.value.replace(/ /g, '');
+        distributeTextWithDelay();
+      } catch (error) {
+        showError(`清除空格失败: ${error.message}`);
+      }
     }
 
     function clearInput() {
-      const textarea = document.getElementById('input-text');
-      textarea.value = '';
-      distributeTextWithDelay();
+      try {
+        const textarea = document.getElementById('input-text');
+        textarea.value = '';
+        distributeTextWithDelay();
+      } catch (error) {
+        showError(`清空输入失败: ${error.message}`);
+      }
     }
 
     function clearPlusN() {
-      const textarea = document.getElementById('input-text');
-      textarea.value = textarea.value.replace(/\+\d+\+/g, '');
-      distributeTextWithDelay();
+      try {
+        const textarea = document.getElementById('input-text');
+        textarea.value = textarea.value.replace(/\+\d+\+/g, '');
+        distributeTextWithDelay();
+      } catch (error) {
+        showError(`清除+N+指令失败: ${error.message}`);
+      }
     }
     
     function distributeTextWithDelay() {
       clearTimeout(updateTimeout);
       if (!autoInputEnabled) return;
+      
+      // 性能优化：减少DOM操作频率
       updateTimeout = setTimeout(() => {
-        distributeText();
-        saveToLocalStorage();
-      }, 500);
+        try {
+          distributeText();
+          saveToLocalStorage();
+        } catch (error) {
+          showError(`文本处理失败: ${error.message}`);
+        }
+      }, 300); // 延迟时间从500ms减少到300ms
     }
 
     function saveToLocalStorage() {
-      const text = document.getElementById('input-text').value;
-      localStorage.setItem('savedText', text);
+      try {
+        const text = document.getElementById('input-text').value;
+        localStorage.setItem('savedText', text);
+      } catch (error) {
+        showError(`保存到本地存储失败: ${error.message}`);
+      }
+    }
+
+    // 性能优化：拆分大型函数
+    function calculateEffectiveLength(text) {
+      let effectiveLength = 0;
+      
+      for (let i = 0; i < text.length; i++) {
+        if (text[i] === '\n') {
+          effectiveLength += GRID_COLUMNS_PER_ROW - (effectiveLength % GRID_COLUMNS_PER_ROW);
+        } else if (text[i] === '+') {
+          if (/\d/.test(text[i + 1])) {
+            let j = i + 1;
+            let validDirective = true;
+            while (j < text.length && text[j] !== '+') {
+              if (!/\d/.test(text[j])) {
+                validDirective = false;
+                break;
+              }
+              j++;
+            }
+            if (validDirective && j < text.length && text[j] === '+') {
+              effectiveLength += parseInt(text.substring(i + 1, j), 10);
+              i = j;
+            } else {
+              effectiveLength++;
+            }
+          } else {
+            effectiveLength++;
+          }
+        } else {
+          effectiveLength++;
+        }
+      }
+      
+      return effectiveLength;
+    }
+
+    function createGridItems(numItems) {
+      const fragment = document.createDocumentFragment();
+      
+      for (let i = 0; i < numItems; i++) {
+        const gridItem = document.createElement('div');
+        gridItem.className = 'grid-item';
+        if ((i + 1) % 100 === 0) {
+          gridItem.setAttribute('data-index', i + 1);
+        }
+        fragment.appendChild(gridItem);
+      }
+      
+      return fragment;
+    }
+
+    function fillGridItems(text, gridItems) {
+      let gridIndex = 0;
+      let i = 0;
+      
+      while (i < text.length && gridIndex < gridItems.length) {
+        if (text[i] === '\n') {
+          if (gridIndex % GRID_COLUMNS_PER_ROW !== 0) {
+            gridIndex = Math.floor(gridIndex / GRID_COLUMNS_PER_ROW) * GRID_COLUMNS_PER_ROW + GRID_COLUMNS_PER_ROW;
+          }
+          i++;
+        } else if (/[a-zA-Z0-9]/.test(text[i]) && /[a-zA-Z0-9.]/.test(text[i + 1])) {
+          gridItems[gridIndex].innerText = text.substring(i, i + 2);
+          gridIndex++;
+          i += 2;
+        } else if (text[i] === '+') {
+          if (/\d/.test(text[i + 1])) {
+            let j = i + 1;
+            let validDirective = true;
+            while (j < text.length && text[j] !== '+') {
+              if (!/\d/.test(text[j])) {
+                validDirective = false;
+                break;
+              }
+              j++;
+            }
+            if (validDirective && j < text.length && text[j] === '+') {
+              const numSpaces = parseInt(text.substring(i + 1, j), 10);
+              for (let k = 0; k < numSpaces && gridIndex < gridItems.length; k++) {
+                gridItems[gridIndex].innerText = ' ';
+                gridIndex++;
+              }
+              i = j + 1;
+            } else {
+              gridItems[gridIndex].innerText = text[i];
+              gridIndex++;
+              i++;
+            }
+          } else {
+            gridItems[gridIndex].innerText = text[i];
+            gridIndex++;
+            i++;
+          }
+        } else {
+          // 行首标点避头，排除省略号和破折号
+          if (gridIndex % GRID_COLUMNS_PER_ROW === 0 
+              && /[，。！？；：’”、）》,.!?;:]/.test(text[i]) 
+              && text[i] !== '…' && text[i] !== '—') {
+            gridItems[gridIndex - 1].innerText += text[i];
+          }
+          // 引号后标点合并，同样排除省略号和破折号
+          else if (gridIndex > 0 
+              && /[》”"]/.test(gridItems[gridIndex - 1].innerText) 
+              && /[、，。：；？！,.?!;:]/.test(text[i]) 
+              && text[i] !== '…' && text[i] !== '—') {
+            gridItems[gridIndex - 1].innerText += text[i];
+          }
+          else {
+            gridItems[gridIndex].innerText = text[i];
+            gridIndex++;
+          }
+          i++;
+        }
+      }
+      
+      return gridIndex;
     }
 
     function distributeText() {
@@ -253,130 +429,42 @@
         const text = document.getElementById('input-text').value;
         const gridContainer = document.getElementById('grid-container');
         gridContainer.innerHTML = '';
-        let effectiveLength = 0;
         
-        // 计算有效长度
-        for (let i = 0; i < text.length; i++) {
-          if (text[i] === '\n') {
-            effectiveLength += GRID_COLUMNS_PER_ROW - (effectiveLength % GRID_COLUMNS_PER_ROW);
-          } else if (text[i] === '+') {
-            if (/\d/.test(text[i + 1])) {
-              let j = i + 1;
-              let validDirective = true;
-              while (j < text.length && text[j] !== '+') {
-                if (!/\d/.test(text[j])) {
-                  validDirective = false;
-                  break;
-                }
-                j++;
-              }
-              if (validDirective && j < text.length && text[j] === '+') {
-                effectiveLength += parseInt(text.substring(i + 1, j), 10);
-                i = j;
-              } else {
-                effectiveLength++;
-              }
-            } else {
-              effectiveLength++;
-            }
-          } else {
-            effectiveLength++;
-          }
-        }
+        // 性能优化：使用拆分后的函数
+        const effectiveLength = calculateEffectiveLength(text);
         
         // 创建网格
         const numRows = Math.ceil(effectiveLength / GRID_COLUMNS_PER_ROW);
-        const fragment = document.createDocumentFragment();
-        
-        for (let i = 0; i < numRows * GRID_COLUMNS_PER_ROW; i++) {
-          const gridItem = document.createElement('div');
-          gridItem.className = 'grid-item';
-          if ((i + 1) % 100 === 0) {
-            gridItem.setAttribute('data-index', i + 1);
-          }
-          fragment.appendChild(gridItem);
-        }
+        const numItems = numRows * GRID_COLUMNS_PER_ROW;
+        const fragment = createGridItems(numItems);
         gridContainer.appendChild(fragment);
         
         // 填充文本到网格
         const gridItems = document.querySelectorAll('.grid-item');
-        let gridIndex = 0;
-        let i = 0;
-        while (i < text.length && gridIndex < gridItems.length) {
-          if (text[i] === '\n') {
-            if (gridIndex % GRID_COLUMNS_PER_ROW !== 0) {
-              gridIndex = Math.floor(gridIndex / GRID_COLUMNS_PER_ROW) * GRID_COLUMNS_PER_ROW + GRID_COLUMNS_PER_ROW;
-            }
-            i++;
-          } else if (/[a-zA-Z0-9]/.test(text[i]) && /[a-zA-Z0-9.]/.test(text[i + 1])) {
-            gridItems[gridIndex].innerText = text.substring(i, i + 2);
-            gridIndex++;
-            i += 2;
-          } else if (text[i] === '+') {
-            if (/\d/.test(text[i + 1])) {
-              let j = i + 1;
-              let validDirective = true;
-              while (j < text.length && text[j] !== '+') {
-                if (!/\d/.test(text[j])) {
-                  validDirective = false;
-                  break;
-                }
-                j++;
-              }
-              if (validDirective && j < text.length && text[j] === '+') {
-                const numSpaces = parseInt(text.substring(i + 1, j), 10);
-                for (let k = 0; k < numSpaces && gridIndex < gridItems.length; k++) {
-                  gridItems[gridIndex].innerText = ' ';
-                  gridIndex++;
-                }
-                i = j + 1;
-              } else {
-                gridItems[gridIndex].innerText = text[i];
-                gridIndex++;
-                i++;
-              }
-            } else {
-              gridItems[gridIndex].innerText = text[i];
-              gridIndex++;
-              i++;
-            }
-          } else {
-            // 行首标点避头，排除省略号和破折号
-            if (gridIndex % GRID_COLUMNS_PER_ROW === 0 
-                && /[，。！？；：’”、）》,.!?;:]/.test(text[i]) 
-                && text[i] !== '…' && text[i] !== '—') {
-              gridItems[gridIndex - 1].innerText += text[i];
-            }
-            // 引号后标点合并，同样排除省略号和破折号
-            else if (gridIndex > 0 
-                && /[》”"]/.test(gridItems[gridIndex - 1].innerText) 
-                && /[、，。：；？！,.?!;:]/.test(text[i]) 
-                && text[i] !== '…' && text[i] !== '—') {
-              gridItems[gridIndex - 1].innerText += text[i];
-            }
-            else {
-              gridItems[gridIndex].innerText = text[i];
-              gridIndex++;
-            }
-            i++;
-          }
-        }
+        const gridIndex = fillGridItems(text, gridItems);
         
         // 更新字数显示
         const countDisplay = document.getElementById('count-display');
         countDisplay.innerText = `表格计数: ${gridIndex}`;
+        
+        // 隐藏之前的错误信息
+        document.getElementById('error-message').style.display = 'none';
       } catch (error) {
         console.error("网格生成错误:", error);
-        alert("处理文本时发生错误，请检查特殊字符");
+        showError(`处理文本时发生错误: ${error.message}\n请检查特殊字符或简化文本`);
         document.getElementById('grid-container').innerHTML = '<div class="error">生成失败，请尝试简化文本</div>';
       }
     }
 
     function toggleAutoInput() {
-      autoInputEnabled = !autoInputEnabled;
-      const button = document.getElementById('toggle-auto-input');
-      button.innerText = autoInputEnabled ? '自动输入·开' : '自动输入·关';
-      alert(`已切换为 ${button.innerText}`);
+      try {
+        autoInputEnabled = !autoInputEnabled;
+        const button = document.getElementById('toggle-auto-input');
+        button.innerText = autoInputEnabled ? '自动输入·开' : '自动输入·关';
+        alert(`已切换为 ${button.innerText}`);
+      } catch (error) {
+        showError(`切换自动输入失败: ${error.message}`);
+      }
     }
 
     function downloadText() {
@@ -401,38 +489,51 @@
         URL.revokeObjectURL(url);
       } catch (error) {
         console.error("下载失败:", error);
-        alert("文件创建失败，请检查浏览器权限");
+        showError(`文件下载失败: ${error.message}\n请检查浏览器权限`);
       }
     }
 
     window.onload = function() {
-      const savedText = localStorage.getItem('savedText');
-      if (savedText) {
-        document.getElementById('input-text').value = savedText;
-        distributeText();
+      try {
+        const savedText = localStorage.getItem('savedText');
+        if (savedText) {
+          document.getElementById('input-text').value = savedText;
+          distributeText();
+        }
+      } catch (error) {
+        showError(`加载本地存储失败: ${error.message}`);
       }
     };
 
     function adjustTextarea(action) {
-      const textarea = document.getElementById('input-text');
-      const step = 20;
-      const currentWidth = parseInt(window.getComputedStyle(textarea).width, 10);
-      const currentHeight = parseInt(window.getComputedStyle(textarea).height, 10);
-      if (action === 'narrow') {
-        textarea.style.width = `${currentWidth - step}px`;
-      } else if (action === 'wide') {
-        textarea.style.width = `${currentWidth + step}px`;
-      } else if (action === 'short') {
-        textarea.style.height = `${currentHeight - step}px`;
-      } else if (action === 'tall') {
-        textarea.style.height = `${currentHeight + step}px`;
+      try {
+        const textarea = document.getElementById('input-text');
+        const step = 20;
+        const currentWidth = parseInt(window.getComputedStyle(textarea).width, 10);
+        const currentHeight = parseInt(window.getComputedStyle(textarea).height, 10);
+        
+        if (action === 'narrow') {
+          textarea.style.width = `${Math.max(100, currentWidth - step)}px`;
+        } else if (action === 'wide') {
+          textarea.style.width = `${currentWidth + step}px`;
+        } else if (action === 'short') {
+          textarea.style.height = `${Math.max(100, currentHeight - step)}px`;
+        } else if (action === 'tall') {
+          textarea.style.height = `${currentHeight + step}px`;
+        }
+      } catch (error) {
+        showError(`调整文本框大小失败: ${error.message}`);
       }
     }
 
     function resetTextarea() {
-      const textarea = document.getElementById('input-text');
-      textarea.style.width = initialWidth;
-      textarea.style.height = initialHeight;
+      try {
+        const textarea = document.getElementById('input-text');
+        textarea.style.width = initialWidth;
+        textarea.style.height = initialHeight;
+      } catch (error) {
+        showError(`重置文本框失败: ${error.message}`);
+      }
     }
 
     /* 页面加载完毕后，立即填充已有文本（含本地存储恢复） */
