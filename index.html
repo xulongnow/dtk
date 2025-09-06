@@ -1,285 +1,442 @@
 <!DOCTYPE html>
 <html lang="zh-cn">
 <head>
-    <meta charset="UTF-8">
-    <title>在线答题卡丨申论格子纸语文作文纸</title>
-    <style>
-        body { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-        .container { text-align: center; width: 100%; margin-top: 10px; }
-        .guide { display: block; margin-top: 20px; margin-bottom: 10px; font-size: 16px; }
-        @media print { .guide { display: none; } }
-        .grid-container { display: grid; grid-template-columns: repeat(25, auto); column-gap: 0; row-gap: 8px; justify-content: center; margin-top: 20px; }
-        .grid-item { border-top: 1px solid red; border-left: 1px solid red; border-bottom: 1px solid red; padding: 5px; text-align: center; font-size: 20px; width: 1.1em; height: 1.1em; display: flex; justify-content: center; align-items: center; }
-        .grid-item:nth-child(25n) { border-right: 1px solid red; }
-        .grid-item:nth-child(100n) { border-right: 2px solid red; position: relative; }
-        .grid-item:nth-child(100n)::after { content: attr(data-index); color: red; font-size: 12px; font-weight: normal; position: absolute; right: -22px; bottom: -10px; }
-        textarea { width: 40%; height: 250px; margin-bottom: 10px; font-size: 18px; }
-        @media print { body { width: 100%; height: auto; } .grid-container { width: 100%; grid-template-columns: repeat(25, 1fr); grid-template-rows: auto; } .grid-item { width: auto; height: auto; padding: 1px; font-size: 17px; } .guide, textarea, .buttons, .adjust-buttons { display: none!important; } .container { margin-top: 0; } }
-        .buttons { margin-top: 10px; display: flex; justify-content: center; align-items: center; }
-        .buttons button { margin: 0 10px; }
-        .count-display { margin-left: 10px; font-size: 14px; font-weight: bold; padding: 5px; border: 1px solid #000; border-radius: 5px; background-color: #f0f0f0; }
-        .input-container { display: flex; flex-direction: column; align-items: center; }
-        .size-buttons { display: flex; justify-content: center; margin-bottom: 10px; }
-        .size-buttons button { margin: 0 5px; }
-    </style>
+  <meta charset="UTF-8">
+  <title>在线答题卡丨申论格子纸语文作文纸</title>
+  <style>
+    /* 打印页面全局边距，保障打印内容不裁切 */
+    @page { margin: 10mm; }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .container {
+      text-align: center;
+      width: 100%;
+      margin-top: 10px;
+    }
+    .guide {
+      display: block;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    @media print {
+      /* 打印时隐藏不相关元素 */
+      .guide, textarea, .buttons, .adjust-buttons {
+        display: none !important;
+      }
+      body {
+        width: 100%;
+        height: auto;
+        /* 内部增加安全边距，兼容无@page情形 */
+        padding: 10mm;
+      }
+      .grid-container {
+        width: 100%;
+        grid-template-columns: repeat(25, 1fr);
+        grid-template-rows: auto;
+      }
+      .grid-item {
+        width: auto;
+        height: auto;
+        padding: 1px;
+        font-size: 17px;
+      }
+      .container { margin-top: 0; }
+      
+      /* 修复打印时标注被裁剪问题 */
+  .grid-item:nth-child(100n)::after {
+    right: 0;
+    font-size: 8px; /* 进一步缩小打印字体 */
+    bottom: -10px;
+    transform: translateX(100%);
+    padding-right: 1px;
+    max-width: 18px; /* 更严格的打印限制 */
+  }
+    }
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(25, auto);
+      column-gap: 0;
+      row-gap: 8px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .grid-item {
+      border-top: 1px solid red;
+      border-left: 1px solid red;
+      border-bottom: 1px solid red;
+      padding: 5px;
+      text-align: center;
+      font-size: 20px;
+      width: 1.1em;
+      height: 1.1em;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .grid-item:nth-child(25n) { border-right: 1px solid red; }
+    .grid-item:nth-child(100n) {
+      border-right: 2px solid red;
+      position: relative;
+    }
+/* 修改后（普通模式） */
+.grid-item:nth-child(100n)::after {
+  content: attr(data-index);
+  color: red;
+  font-size: 10px; /* 缩小字体避免溢出 */
+  font-weight: normal;
+  position: absolute;
+  right: 0; /* 对齐格子右边线 */
+  bottom: -12px; /* 下移避免重叠 */
+  transform: translateX(100%); /* 数字整体右移 */
+  padding-right: 2px; /* 添加微调间距 */
+  text-align: right; /* 文本右对齐 */
+  width: max-content; /* 自适应宽度 */
+  max-width: 22px; /* 限制最大宽度 */
+  overflow: hidden; /* 防溢出 */
+}
+    textarea {
+      width: 40%;
+      height: 250px;
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+    .buttons {
+      margin-top: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .buttons button { margin: 0 10px; }
+    .count-display {
+      margin-left: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      padding: 5px;
+      border: 1px solid #000;
+      border-radius: 5px;
+      background-color: #f0f0f0;
+    }
+    .input-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .size-buttons {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+    .size-buttons button { margin: 0 5px; }
+    
+    /* 移动端适配 */
+    @media (max-width: 768px) {
+      textarea { width: 90%; }
+      .grid-item { font-size: 16px; }
+      .buttons { flex-wrap: wrap; }
+      .buttons button { margin: 5px; }
+    }
+  </style>
 </head>
 <body>
-    <div class="guide">仅用于考试答题模拟，无在线缓存功能，请及时保存</div>
-    <div class="guide">【回车键】换行、【空格键】空1格、【Tab键】空2格、【+N+】空N格</div>
-    <div class="container">
-        <div class="input-container">
-            <div class="size-buttons adjust-buttons">
-                <button onclick="resetTextarea()">复原</button>
-                <button onclick="adjustTextarea('wide')">宽</button>
-                <button onclick="adjustTextarea('narrow')">窄</button>
-                <button onclick="adjustTextarea('tall')">高</button>
-                <button onclick="adjustTextarea('short')">低</button>
-            </div>
-            <textarea id="input-text" oninput="distributeTextWithDelay()" onkeydown="handleKeyDown(event)">+5+关于Y村脱贫攻坚工作的汇报
+  <div class="guide">仅用于考试答题模拟，无在线缓存功能，请及时保存</div>
+  <div class="guide">【回车键】换行、【空格键】空1格、【Tab键】空2格、【+N+】空N格</div>
+  <div class="container">
+    <div class="input-container">
+      <div class="size-buttons adjust-buttons">
+        <button onclick="resetTextarea()">复原</button>
+        <button onclick="adjustTextarea('wide')">宽</button>
+        <button onclick="adjustTextarea('narrow')">窄</button>
+        <button onclick="adjustTextarea('tall')">高</button>
+        <button onclick="adjustTextarea('short')">低</button>
+      </div>
+      <textarea id="input-text" oninput="distributeTextWithDelay()" onkeydown="handleKeyDown(event)">+5+关于Y村脱贫攻坚工作的汇报
 各位领导、同事：
-+2+一、整改建议。1.组织调研到“田间地头”，了解情况，走家串户查找问题。
++2+一、整改建议。1.组织调研到"田间地头"，了解情况，走家串户查找问题。
 +17+Y村村委
 +15+2024年9月27日</textarea>
-        </div>
-        <div class="buttons">
-            <button onclick="clearPlusN()">清除+N+</button>
-            <button onclick="clearNewLines()">清除换行</button>
-            <button onclick="clearSpaces()">清除空格</button>
-            <button onclick="clearInput()">清空</button>
-            <button id="toggle-auto-input" onclick="toggleAutoInput()">自动输入·开</button>
-            <button onclick="distributeText()">填入答题纸</button>
-            <button onclick="downloadText()">下载TXT</button>
-            <button onclick="window.print()">打印</button>
-            <div class="count-display" id="count-display">统计字数: 0</div>
-        </div>
-        <div class="grid-container" id="grid-container"></div>
     </div>
-    <script>
-        let updateTimeout;
-        let delay = 500; // 默认延迟时间
-        let autoInputEnabled = true; // 自动输入状态
-        const initialWidth = '40%';
-        const initialHeight = '250px';
+    <div class="buttons">
+      <button onclick="clearPlusN()">清除+N+</button>
+      <button onclick="clearNewLines()">清除换行</button>
+      <button onclick="clearSpaces()">清除空格</button>
+      <button onclick="clearInput()">清空</button>
+      <button id="toggle-auto-input" onclick="toggleAutoInput()">自动输入·开</button>
+      <button onclick="distributeText()">填入答题纸</button>
+      <button onclick="downloadText()">下载TXT</button>
+      <button onclick="window.print()">打印</button>
+      <div class="count-display" id="count-display">统计字数: 0</div>
+    </div>
+    <div class="grid-container" id="grid-container"></div>
+  </div>
+  <script>
+    const GRID_COLUMNS_PER_ROW = 25;
+    let updateTimeout;
+    let autoInputEnabled = true;
+    const initialWidth = '40%';
+    const initialHeight = '250px';
 
-        function insertText(text) {
-            const textarea = document.getElementById('input-text');
-            textarea.focus();
-            document.execCommand('insertText', false, text);
-        }
+    function insertText(text) {
+      const textarea = document.getElementById('input-text');
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const value = textarea.value;
+      textarea.value = value.slice(0, start) + text + value.slice(end);
+      textarea.selectionStart = textarea.selectionEnd = start + text.length;
+      textarea.focus();
+    }
 
-        function clearNewLines() {
-            const textarea = document.getElementById('input-text');
-            textarea.value = textarea.value.replace(/\n/g, '');
-            distributeTextWithDelay(); // 延迟更新答题格
-        }
+    function handleKeyDown(event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        insertText('\n');
+        distributeTextWithDelay();
+      } else if (event.key === 'Tab') {
+        event.preventDefault();
+        insertText('+2+');
+        distributeTextWithDelay();
+      } else if (event.key === ' ') {
+        event.preventDefault();
+        insertText(' ');
+        distributeTextWithDelay();
+      }
+    }
 
-        function handleKeyDown(event) {
-            const textarea = document.getElementById('input-text');
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                insertText('\n');
-            } else if (event.key === 'Tab') {
-                event.preventDefault();
-                insertText('+2+');
-            } else if (event.key === ' ') {
-                event.preventDefault();
-                insertText(' ');
-            }
-        }
+    function clearNewLines() {
+      const textarea = document.getElementById('input-text');
+      textarea.value = textarea.value.replace(/\n/g, '');
+      distributeTextWithDelay();
+    }
 
-        function clearSpaces() {
-            const textarea = document.getElementById('input-text');
-            textarea.value = textarea.value.replace(/ /g, '');
-            distributeTextWithDelay(); // 延迟更新答题格
-        }
+    function clearSpaces() {
+      const textarea = document.getElementById('input-text');
+      textarea.value = textarea.value.replace(/ /g, '');
+      distributeTextWithDelay();
+    }
 
-        function clearInput() {
-            const textarea = document.getElementById('input-text');
-            textarea.value = '';
-            distributeTextWithDelay(); // 延迟更新答题格
-        }
+    function clearInput() {
+      const textarea = document.getElementById('input-text');
+      textarea.value = '';
+      distributeTextWithDelay();
+    }
 
-        function clearPlusN() {
-            const textarea = document.getElementById('input-text');
-            textarea.value = textarea.value.replace(/\+\d+\+/g, '');
-            distributeTextWithDelay(); // 延迟更新答题格
-        }
-
-        function distributeTextWithDelay() {
-            clearTimeout(updateTimeout);
-            updateTimeout = setTimeout(() => {
-                distributeText();
-            }, delay);
-            saveToLocalStorage(); // 立即保存到本地存储
-        }
-
-        function saveToLocalStorage() {
-            const text = document.getElementById('input-text').value;
-            localStorage.setItem('savedText', text);
-        }
-
-        function distributeText() {
-            const text = document.getElementById('input-text').value;
-            const gridContainer = document.getElementById('grid-container');
-            gridContainer.innerHTML = '';
-            let effectiveLength = 0;
-            for (let i = 0; i < text.length; i++) {
-                if (text[i] === '\n') {
-                    effectiveLength += 25 - (effectiveLength % 25);
-                } else if (text[i] === '+') {
-                    if (/\d/.test(text[i + 1])) {
-                        let j = i + 1;
-                        while (j < text.length && text[j] !== '+') {
-                            j++;
-                        }
-                        effectiveLength += parseInt(text.substring(i + 1, j), 10);
-                        i = j;
-                    } else {
-                        effectiveLength++;
-                    }
-                } else {
-                    effectiveLength++;
-                }
-            }
-            const numRows = Math.ceil(effectiveLength / 25);
-            for (let i = 0; i < numRows * 25; i++) {
-                const gridItem = document.createElement('div');
-                gridItem.className = 'grid-item';
-                if ((i + 1) % 100 === 0) {
-                    gridItem.setAttribute('data-index', i + 1);
-                }
-                gridContainer.appendChild(gridItem);
-            }
-            const gridItems = document.querySelectorAll('.grid-item');
-            let gridIndex = 0;
-            let i = 0;
-            while (i < text.length && gridIndex < gridItems.length) {
-                if (text[i] === '\n') {
-                    if (gridIndex % 25 !== 0) {
-                        gridIndex = Math.floor(gridIndex / 25) * 25 + 25;
-                    }
-                    i++;
-                } else if (/[a-zA-Z0-9]/.test(text[i]) && /[a-zA-Z0-9.]/.test(text[i + 1])) {
-                    gridItems[gridIndex].innerText = text.substring(i, i + 2);
-                    gridIndex++;
-                    i += 2;
-                } else if (text[i] === '+') {
-                    if (/\d/.test(text[i + 1])) {
-                        let numStr = '';
-                        let j = i + 1;
-                        while (j < text.length && text[j] !== '+') {
-                            numStr += text[j];
-                            j++;
-                        }
-                        const numSpaces = parseInt(numStr, 10);
-                        for (let k = 0; k < numSpaces; k++) {
-                            if (gridIndex < gridItems.length) {
-                                gridItems[gridIndex].innerText = ' ';
-                                gridIndex++;
-                            }
-                        }
-                        i = j + 1;
-                    } else {
-                        gridItems[gridIndex].innerText = text[i];
-                        gridIndex++;
-                        i++;
-                    }
-                } else {
-                    if (gridIndex % 25 === 0 && /[，。！？；：’”、）》,.!?;:)]/.test(text[i])) {
-                        gridItems[gridIndex - 1].innerText += text[i];
-                    } else if (gridIndex > 0 && /[》”"]/.test(gridItems[gridIndex - 1].innerText) && /[、，。：；？！,.?!;:]/.test(text[i])) {
-                        gridItems[gridIndex - 1].innerText += text[i];
-                    } else {
-                        gridItems[gridIndex].innerText = text[i];
-                        gridIndex++;
-                    }
-                    i++;
-                }
-            }
-            const countDisplay = document.getElementById('count-display');
-            countDisplay.innerText = `表格计数: ${gridIndex}`;
-        }
-
-        function toggleAutoInput() {
-            autoInputEnabled = !autoInputEnabled;
-            const button = document.getElementById('toggle-auto-input');
-            if (autoInputEnabled) {
-                delay = 500;
-                button.innerText = '自动输入·开';
-            } else {
-                delay = 24 * 60 * 60 * 1000; // 24小时
-                button.innerText = '自动输入·关';
-            }
-            alert(`已切换为 ${button.innerText}`);
-        }
-
-        function executeWithDelay(callback) {
-            callback();
-        }
-
-        function downloadText() {
-    const text = document.getElementById('input-text').value; // 获取输入框中的文本内容
-    const blob = new Blob([text], { type: 'text/plain' }); // 创建一个包含文本内容的Blob对象
-    const url = URL.createObjectURL(blob); // 生成一个URL来表示Blob对象
-
-    // 获取当前日期和时间
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-
-    // 获取输入框前8个汉字
-    const prefix = text.substring(0, 8);
-
-    // 设置下载文件名
-    const fileName = `${year}${month}${day}${hours}${minutes}_${prefix}.txt`;
-
-    const a = document.createElement('a'); // 创建一个隐藏的链接元素
-    a.href = url; // 设置链接的href属性为生成的URL
-    a.download = fileName; // 设置下载文件的名称
-    document.body.appendChild(a); // 将链接元素添加到文档中
-    a.click(); // 模拟点击链接，触发下载
-    document.body.removeChild(a); // 下载完成后移除链接元素
-    URL.revokeObjectURL(url); // 释放生成的URL
-}
-
-        window.onload = function() {
-            const savedText = localStorage.getItem('savedText');
-            if (savedText) {
-                document.getElementById('input-text').value = savedText;
-                distributeText();
-            }
-        };
-
-        function adjustTextarea(action) {
-            const textarea = document.getElementById('input-text');
-            const step = 20; // 每次调整的像素值
-            const currentWidth = parseInt(window.getComputedStyle(textarea).width, 10);
-            const currentHeight = parseInt(window.getComputedStyle(textarea).height, 10);
-
-            if (action === 'narrow') {
-                textarea.style.width = `${currentWidth - step}px`;
-                textarea.style.marginLeft = `${step / 2}px`;
-            } else if (action === 'wide') {
-                textarea.style.width = `${currentWidth + step}px`;
-                textarea.style.marginLeft = `-${step / 2}px`;
-            } else if (action === 'short') {
-                textarea.style.height = `${currentHeight - step}px`;
-            } else if (action === 'tall') {
-                textarea.style.height = `${currentHeight + step}px`;
-            }
-        }
-
-        function resetTextarea() {
-            const textarea = document.getElementById('input-text');
-            textarea.style.width = initialWidth;
-            textarea.style.height = initialHeight;
-            textarea.style.marginLeft = '0';
-        }
-
+    function clearPlusN() {
+      const textarea = document.getElementById('input-text');
+      textarea.value = textarea.value.replace(/\+\d+\+/g, '');
+      distributeTextWithDelay();
+    }
+    
+    function distributeTextWithDelay() {
+      clearTimeout(updateTimeout);
+      if (!autoInputEnabled) return;
+      updateTimeout = setTimeout(() => {
         distributeText();
-    </script>
+        saveToLocalStorage();
+      }, 500);
+    }
+
+    function saveToLocalStorage() {
+      const text = document.getElementById('input-text').value;
+      localStorage.setItem('savedText', text);
+    }
+
+    function distributeText() {
+      try {
+        const text = document.getElementById('input-text').value;
+        const gridContainer = document.getElementById('grid-container');
+        gridContainer.innerHTML = '';
+        let effectiveLength = 0;
+        
+        // 计算有效长度
+        for (let i = 0; i < text.length; i++) {
+          if (text[i] === '\n') {
+            effectiveLength += GRID_COLUMNS_PER_ROW - (effectiveLength % GRID_COLUMNS_PER_ROW);
+          } else if (text[i] === '+') {
+            if (/\d/.test(text[i + 1])) {
+              let j = i + 1;
+              let validDirective = true;
+              while (j < text.length && text[j] !== '+') {
+                if (!/\d/.test(text[j])) {
+                  validDirective = false;
+                  break;
+                }
+                j++;
+              }
+              if (validDirective && j < text.length && text[j] === '+') {
+                effectiveLength += parseInt(text.substring(i + 1, j), 10);
+                i = j;
+              } else {
+                effectiveLength++;
+              }
+            } else {
+              effectiveLength++;
+            }
+          } else {
+            effectiveLength++;
+          }
+        }
+        
+        // 创建网格
+        const numRows = Math.ceil(effectiveLength / GRID_COLUMNS_PER_ROW);
+        const fragment = document.createDocumentFragment();
+        
+        for (let i = 0; i < numRows * GRID_COLUMNS_PER_ROW; i++) {
+          const gridItem = document.createElement('div');
+          gridItem.className = 'grid-item';
+          if ((i + 1) % 100 === 0) {
+            gridItem.setAttribute('data-index', i + 1);
+          }
+          fragment.appendChild(gridItem);
+        }
+        gridContainer.appendChild(fragment);
+        
+        // 填充文本到网格
+        const gridItems = document.querySelectorAll('.grid-item');
+        let gridIndex = 0;
+        let i = 0;
+        while (i < text.length && gridIndex < gridItems.length) {
+          if (text[i] === '\n') {
+            if (gridIndex % GRID_COLUMNS_PER_ROW !== 0) {
+              gridIndex = Math.floor(gridIndex / GRID_COLUMNS_PER_ROW) * GRID_COLUMNS_PER_ROW + GRID_COLUMNS_PER_ROW;
+            }
+            i++;
+          } else if (/[a-zA-Z0-9]/.test(text[i]) && /[a-zA-Z0-9.]/.test(text[i + 1])) {
+            gridItems[gridIndex].innerText = text.substring(i, i + 2);
+            gridIndex++;
+            i += 2;
+          } else if (text[i] === '+') {
+            if (/\d/.test(text[i + 1])) {
+              let j = i + 1;
+              let validDirective = true;
+              while (j < text.length && text[j] !== '+') {
+                if (!/\d/.test(text[j])) {
+                  validDirective = false;
+                  break;
+                }
+                j++;
+              }
+              if (validDirective && j < text.length && text[j] === '+') {
+                const numSpaces = parseInt(text.substring(i + 1, j), 10);
+                for (let k = 0; k < numSpaces && gridIndex < gridItems.length; k++) {
+                  gridItems[gridIndex].innerText = ' ';
+                  gridIndex++;
+                }
+                i = j + 1;
+              } else {
+                gridItems[gridIndex].innerText = text[i];
+                gridIndex++;
+                i++;
+              }
+            } else {
+              gridItems[gridIndex].innerText = text[i];
+              gridIndex++;
+              i++;
+            }
+          } else {
+            // 行首标点避头，排除省略号和破折号
+            if (gridIndex % GRID_COLUMNS_PER_ROW === 0 
+                && /[，。！？；：’”、）》,.!?;:]/.test(text[i]) 
+                && text[i] !== '…' && text[i] !== '—') {
+              gridItems[gridIndex - 1].innerText += text[i];
+            }
+            // 引号后标点合并，同样排除省略号和破折号
+            else if (gridIndex > 0 
+                && /[》”"]/.test(gridItems[gridIndex - 1].innerText) 
+                && /[、，。：；？！,.?!;:]/.test(text[i]) 
+                && text[i] !== '…' && text[i] !== '—') {
+              gridItems[gridIndex - 1].innerText += text[i];
+            }
+            else {
+              gridItems[gridIndex].innerText = text[i];
+              gridIndex++;
+            }
+            i++;
+          }
+        }
+        
+        // 更新字数显示
+        const countDisplay = document.getElementById('count-display');
+        countDisplay.innerText = `表格计数: ${gridIndex}`;
+      } catch (error) {
+        console.error("网格生成错误:", error);
+        alert("处理文本时发生错误，请检查特殊字符");
+        document.getElementById('grid-container').innerHTML = '<div class="error">生成失败，请尝试简化文本</div>';
+      }
+    }
+
+    function toggleAutoInput() {
+      autoInputEnabled = !autoInputEnabled;
+      const button = document.getElementById('toggle-auto-input');
+      button.innerText = autoInputEnabled ? '自动输入·开' : '自动输入·关';
+      alert(`已切换为 ${button.innerText}`);
+    }
+
+    function downloadText() {
+      try {
+        const text = document.getElementById('input-text').value;
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const prefix = text.substring(0, 8);
+        const fileName = `${year}${month}${day}${hours}${minutes}_${prefix}.txt`;
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error("下载失败:", error);
+        alert("文件创建失败，请检查浏览器权限");
+      }
+    }
+
+    window.onload = function() {
+      const savedText = localStorage.getItem('savedText');
+      if (savedText) {
+        document.getElementById('input-text').value = savedText;
+        distributeText();
+      }
+    };
+
+    function adjustTextarea(action) {
+      const textarea = document.getElementById('input-text');
+      const step = 20;
+      const currentWidth = parseInt(window.getComputedStyle(textarea).width, 10);
+      const currentHeight = parseInt(window.getComputedStyle(textarea).height, 10);
+      if (action === 'narrow') {
+        textarea.style.width = `${currentWidth - step}px`;
+      } else if (action === 'wide') {
+        textarea.style.width = `${currentWidth + step}px`;
+      } else if (action === 'short') {
+        textarea.style.height = `${currentHeight - step}px`;
+      } else if (action === 'tall') {
+        textarea.style.height = `${currentHeight + step}px`;
+      }
+    }
+
+    function resetTextarea() {
+      const textarea = document.getElementById('input-text');
+      textarea.style.width = initialWidth;
+      textarea.style.height = initialHeight;
+    }
+
+    /* 页面加载完毕后，立即填充已有文本（含本地存储恢复） */
+    distributeText();
+  </script>
 </body>
 </html>
