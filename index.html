@@ -155,6 +155,16 @@
       .buttons { flex-wrap: wrap; }
       .buttons button { margin: 5px; }
     }
+    
+    /* 新增：自动输入按钮样式 */
+    .auto-on {
+      background-color: #4CAF50; /* 绿色表示开启 */
+      color: white;
+    }
+    .auto-off {
+      background-color: #f44336; /* 红色表示关闭 */
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -181,7 +191,8 @@
       <button onclick="clearNewLines()">清除换行</button>
       <button onclick="clearSpaces()">清除空格</button>
       <button onclick="clearInput()">清空</button>
-      <button id="toggle-auto-input" onclick="toggleAutoInput()">自动输入·开</button>
+      <button onclick="undo()">撤销</button>
+      <button id="toggle-auto-input" class="auto-on" onclick="toggleAutoInput()">自动输入·开</button>
       <button onclick="distributeText()">填入答题纸</button>
       <button onclick="downloadText()">下载TXT</button>
       <button onclick="window.print()">打印</button>
@@ -195,6 +206,10 @@
     let autoInputEnabled = true;
     const initialWidth = '40%';
     const initialHeight = '250px';
+    
+    // 新增：撤销历史记录
+    const undoHistory = [];
+    const MAX_UNDO_STEPS = 10;
 
     // 新增：错误消息显示函数
     function showError(message) {
@@ -447,6 +462,9 @@
         const countDisplay = document.getElementById('count-display');
         countDisplay.innerText = `表格计数: ${gridIndex}`;
         
+        // 保存到撤销历史
+        addToUndoHistory(text);
+        
         // 隐藏之前的错误信息
         document.getElementById('error-message').style.display = 'none';
       } catch (error) {
@@ -456,12 +474,57 @@
       }
     }
 
+    // 新增：添加到撤销历史
+    function addToUndoHistory(text) {
+      // 只保存不同的状态
+      if (undoHistory.length === 0 || undoHistory[undoHistory.length - 1] !== text) {
+        undoHistory.push(text);
+        
+        // 限制历史记录长度
+        if (undoHistory.length > MAX_UNDO_STEPS) {
+          undoHistory.shift(); // 移除最早的历史记录
+        }
+      }
+    }
+
+    // 新增：撤销功能
+    function undo() {
+      try {
+        if (undoHistory.length < 2) {
+          showError('无法撤销：历史记录不足');
+          return;
+        }
+        
+        // 移除当前状态
+        undoHistory.pop();
+        
+        // 获取上一个状态
+        const prevText = undoHistory[undoHistory.length - 1];
+        
+        // 更新文本框内容
+        document.getElementById('input-text').value = prevText;
+        
+        // 重新渲染网格
+        distributeText();
+      } catch (error) {
+        showError(`撤销操作失败: ${error.message}`);
+      }
+    }
+
     function toggleAutoInput() {
       try {
         autoInputEnabled = !autoInputEnabled;
         const button = document.getElementById('toggle-auto-input');
         button.innerText = autoInputEnabled ? '自动输入·开' : '自动输入·关';
-        alert(`已切换为 ${button.innerText}`);
+        
+        // 更新按钮颜色
+        if (autoInputEnabled) {
+          button.classList.remove('auto-off');
+          button.classList.add('auto-on');
+        } else {
+          button.classList.remove('auto-on');
+          button.classList.add('auto-off');
+        }
       } catch (error) {
         showError(`切换自动输入失败: ${error.message}`);
       }
