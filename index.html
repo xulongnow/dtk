@@ -40,7 +40,7 @@
     }
     @media print {
       /* 打印时隐藏不相关元素 */
-      .guide, textarea, .buttons, .adjust-buttons, .error-message {
+      .guide, .editable-div, .buttons, .adjust-buttons, .error-message {
         display: none !important;
       }
       body {
@@ -114,11 +114,20 @@
   max-width: 22px; /* 限制最大宽度 */
   overflow: hidden; /* 防溢出 */
 }
-    textarea {
+    /* 替换textarea为可编辑div */
+    .editable-div {
       width: 40%;
       height: 250px;
       margin-bottom: 10px;
       font-size: 18px;
+      border: 1px solid #ccc;
+      padding: 5px;
+      white-space: pre-wrap; /* 保留空白和换行 */
+      overflow: auto;
+      text-align: left; /* 确保文本左对齐 */
+    }
+    .editable-div .directive {
+      color: blue; /* +N+指令显示为蓝色 */
     }
     .buttons {
       margin-top: 10px;
@@ -150,7 +159,7 @@
     
     /* 移动端适配 */
     @media (max-width: 768px) {
-      textarea { width: 90%; }
+      .editable-div { width: 90%; }
       .grid-item { font-size: 16px; }
       .buttons { flex-wrap: wrap; }
       .buttons button { margin: 5px; }
@@ -180,11 +189,8 @@
         <button onclick="adjustTextarea('tall')">高</button>
         <button onclick="adjustTextarea('short')">低</button>
       </div>
-      <textarea id="input-text" oninput="distributeTextWithDelay()" onkeydown="handleKeyDown(event)">+5+关于Y村脱贫攻坚工作的汇报
-各位领导、同事：
-+2+一、整改建议。1.组织调研到"田间地头"，了解情况，走家串户查找问题。
-+17+Y村村委
-+15+2024年9月27日</textarea>
+      <!-- 替换textarea为可编辑div -->
+      <div id="input-text" class="editable-div" contenteditable="true" oninput="distributeTextWithDelay()" onkeydown="handleKeyDown(event)"></div>
     </div>
     <div class="buttons">
       <button onclick="clearPlusN()">清除+N+</button>
@@ -223,15 +229,107 @@
       }, 5000);
     }
 
+    // 新增：保存和恢复光标位置的函数
+    function saveCaretPosition(container) {
+      const selection = window.getSelection();
+      if (selection.rangeCount === 0) return null;
+      
+      const range = selection.getRangeAt(0);
+      const preRange = document.createRange();
+      preRange.selectNodeContents(container);
+      preRange.setEnd(range.startContainer, range.startOffset);
+      
+      return {
+        start: preRange.toString().length,
+        range: range
+      };
+    }
+
+    function restoreCaretPosition(container, pos) {
+      if (pos === null) return;
+      
+      const textNodes = getTextNodes(container);
+      let total = 0;
+      
+      for (let node of textNodes) {
+        const length = node.nodeValue.length;
+        if (pos.start <= total + length) {
+          const range = document.createRange();
+          range.setStart(node, pos.start - total);
+          range.collapse(true);
+          
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          container.focus();
+          return;
+        }
+        total += length;
+      }
+      
+      // 如果位置超出，放在最后
+      if (textNodes.length > 0) {
+        const lastNode = textNodes[textNodes.length - 1];
+        const range = document.createRange();
+        range.setStart(lastNode, lastNode.nodeValue.length);
+        range.collapse(true);
+        
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        container.focus();
+      }
+    }
+
+    function getTextNodes(container) {
+      const textNodes = [];
+      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+      
+      while (walker.nextNode()) {
+        textNodes.push(walker.currentNode);
+      }
+      
+      return textNodes;
+    }
+
+    // 修改后：高亮指令时保存和恢复光标位置
+    function highlightDirectives() {
+      const inputTextDiv = document.getElementById('input-text');
+      const text = inputTextDiv.innerText;
+      
+      // 保存光标位置
+      const caretPos = saveCaretPosition(inputTextDiv);
+      
+      // 使用正则表达式匹配+N+指令
+      const regex = /(\+\d+\+)/g;
+      const newHTML = text.replace(regex, '<span class="directive">$1</span>');
+      
+      inputTextDiv.innerHTML = newHTML;
+      
+      // 恢复光标位置
+      restoreCaretPosition(inputTextDiv, caretPos);
+    }
+
     function insertText(text) {
       try {
-        const textarea = document.getElementById('input-text');
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const value = textarea.value;
-        textarea.value = value.slice(0, start) + text + value.slice(end);
-        textarea.selectionStart = textarea.selectionEnd = start + text.length;
-        textarea.focus();
+        const inputTextDiv = document.getElementById('input-text');
+        const selection = window.getSelection();
+        
+        if (selection.rangeCount) {
+          const range = selection.getRangeAt(0);
+          range.deleteContents();
+          
+          const textNode = document.createTextNode(text);
+          range.insertNode(textNode);
+          
+          // 移动光标到插入位置之后
+          range.setStartAfter(textNode);
+          range.setEndAfter(textNode);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        
+        distributeTextWithDelay();
       } catch (error) {
         showError(`插入文本失败: ${error.message}`);
       }
@@ -243,15 +341,12 @@
           event.preventDefault();
           // 修改：回车时自动添加换行符和+2+指令
           insertText('\n+2+');
-          distributeTextWithDelay();
         } else if (event.key === 'Tab') {
           event.preventDefault();
           insertText('+2+');
-          distributeTextWithDelay();
         } else if (event.key === ' ') {
           event.preventDefault();
           insertText(' ');
-          distributeTextWithDelay();
         }
       } catch (error) {
         showError(`按键处理错误: ${error.message}`);
@@ -260,9 +355,17 @@
 
     function clearNewLines() {
       try {
-        const textarea = document.getElementById('input-text');
-        textarea.value = textarea.value.replace(/\n/g, '');
+        const inputTextDiv = document.getElementById('input-text');
+        
+        // 保存光标位置
+        const caretPos = saveCaretPosition(inputTextDiv);
+        
+        inputTextDiv.innerText = inputTextDiv.innerText.replace(/\n/g, '');
+        highlightDirectives();
         distributeTextWithDelay();
+        
+        // 恢复光标位置
+        restoreCaretPosition(inputTextDiv, caretPos);
       } catch (error) {
         showError(`清除换行失败: ${error.message}`);
       }
@@ -270,9 +373,17 @@
 
     function clearSpaces() {
       try {
-        const textarea = document.getElementById('input-text');
-        textarea.value = textarea.value.replace(/ /g, '');
+        const inputTextDiv = document.getElementById('input-text');
+        
+        // 保存光标位置
+        const caretPos = saveCaretPosition(inputTextDiv);
+        
+        inputTextDiv.innerText = inputTextDiv.innerText.replace(/ /g, '');
+        highlightDirectives();
         distributeTextWithDelay();
+        
+        // 恢复光标位置
+        restoreCaretPosition(inputTextDiv, caretPos);
       } catch (error) {
         showError(`清除空格失败: ${error.message}`);
       }
@@ -280,9 +391,17 @@
 
     function clearInput() {
       try {
-        const textarea = document.getElementById('input-text');
-        textarea.value = '';
+        const inputTextDiv = document.getElementById('input-text');
+        
+        // 保存光标位置
+        const caretPos = saveCaretPosition(inputTextDiv);
+        
+        inputTextDiv.innerText = '';
+        highlightDirectives();
         distributeTextWithDelay();
+        
+        // 恢复光标位置（虽然内容为空，但保持光标在开头）
+        restoreCaretPosition(inputTextDiv, caretPos);
       } catch (error) {
         showError(`清空输入失败: ${error.message}`);
       }
@@ -290,9 +409,17 @@
 
     function clearPlusN() {
       try {
-        const textarea = document.getElementById('input-text');
-        textarea.value = textarea.value.replace(/\+\d+\+/g, '');
+        const inputTextDiv = document.getElementById('input-text');
+        
+        // 保存光标位置
+        const caretPos = saveCaretPosition(inputTextDiv);
+        
+        inputTextDiv.innerText = inputTextDiv.innerText.replace(/\+\d+\+/g, '');
+        highlightDirectives();
         distributeTextWithDelay();
+        
+        // 恢复光标位置
+        restoreCaretPosition(inputTextDiv, caretPos);
       } catch (error) {
         showError(`清除+N+指令失败: ${error.message}`);
       }
@@ -302,20 +429,28 @@
       clearTimeout(updateTimeout);
       if (!autoInputEnabled) return;
       
+      // 保存光标位置
+      const inputTextDiv = document.getElementById('input-text');
+      const caretPos = saveCaretPosition(inputTextDiv);
+      
       // 性能优化：减少DOM操作频率
       updateTimeout = setTimeout(() => {
         try {
           distributeText();
           saveToLocalStorage();
+          highlightDirectives(); // 更新高亮
         } catch (error) {
           showError(`文本处理失败: ${error.message}`);
+        } finally {
+          // 恢复光标位置
+          restoreCaretPosition(inputTextDiv, caretPos);
         }
       }, 300); // 延迟时间从500ms减少到300ms
     }
 
     function saveToLocalStorage() {
       try {
-        const text = document.getElementById('input-text').value;
+        const text = document.getElementById('input-text').innerText;
         localStorage.setItem('savedText', text);
       } catch (error) {
         showError(`保存到本地存储失败: ${error.message}`);
@@ -441,7 +576,8 @@
 
     function distributeText() {
       try {
-        const text = document.getElementById('input-text').value;
+        const inputTextDiv = document.getElementById('input-text');
+        const text = inputTextDiv.innerText; // 获取纯文本内容
         const gridContainer = document.getElementById('grid-container');
         gridContainer.innerHTML = '';
         
@@ -487,13 +623,18 @@
       }
     }
 
-    // 新增：撤销功能
+    // 修改后：撤销功能中保存和恢复光标位置
     function undo() {
       try {
         if (undoHistory.length < 2) {
           showError('无法撤销：历史记录不足');
           return;
         }
+        
+        const inputTextDiv = document.getElementById('input-text');
+        
+        // 保存当前光标位置
+        const caretPos = saveCaretPosition(inputTextDiv);
         
         // 移除当前状态
         undoHistory.pop();
@@ -502,10 +643,14 @@
         const prevText = undoHistory[undoHistory.length - 1];
         
         // 更新文本框内容
-        document.getElementById('input-text').value = prevText;
+        inputTextDiv.innerText = prevText;
+        highlightDirectives();
         
         // 重新渲染网格
         distributeText();
+        
+        // 恢复光标位置
+        restoreCaretPosition(inputTextDiv, caretPos);
       } catch (error) {
         showError(`撤销操作失败: ${error.message}`);
       }
@@ -532,7 +677,16 @@
 
     function downloadText() {
       try {
-        const text = document.getElementById('input-text').value;
+        const text = document.getElementById('input-text').innerText;
+        
+        // 获取第一行文本（标题行）
+        const firstLineEnd = text.indexOf('\n');
+        let titleLine = firstLineEnd > -1 ? text.substring(0, firstLineEnd) : text;
+        
+        // 移除+N+指令并获取前25个字符
+        const cleanTitle = titleLine.replace(/\+\d+\+/g, '');
+        const prefix = cleanTitle.substring(0, 25).replace(/[\n\r]/g, '');
+        
         const blob = new Blob([text], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const now = new Date();
@@ -541,8 +695,10 @@
         const day = String(now.getDate()).padStart(2, '0');
         const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
-        const prefix = text.substring(0, 8);
+        
+        // 使用处理后的标题作为文件名前缀
         const fileName = `${year}${month}${day}${hours}${minutes}_${prefix}.txt`;
+        
         const a = document.createElement('a');
         a.href = url;
         a.download = fileName;
@@ -559,10 +715,24 @@
     window.onload = function() {
       try {
         const savedText = localStorage.getItem('savedText');
+        const inputTextDiv = document.getElementById('input-text');
+        
+        // 设置默认文本
+        const defaultText = `+5+关于Y村脱贫攻坚工作的汇报
+各位领导、同事：
++2+一、整改建议。1.组织调研到"田间地头"，了解情况，走家串户查找问题。
++17+Y村村委
++15+2024年9月27日`;
+        
         if (savedText) {
-          document.getElementById('input-text').value = savedText;
-          distributeText();
+          inputTextDiv.innerText = savedText;
+        } else {
+          inputTextDiv.innerText = defaultText;
         }
+        
+        // 初始高亮
+        highlightDirectives();
+        distributeText();
       } catch (error) {
         showError(`加载本地存储失败: ${error.message}`);
       }
@@ -570,19 +740,19 @@
 
     function adjustTextarea(action) {
       try {
-        const textarea = document.getElementById('input-text');
+        const inputTextDiv = document.getElementById('input-text');
         const step = 20;
-        const currentWidth = parseInt(window.getComputedStyle(textarea).width, 10);
-        const currentHeight = parseInt(window.getComputedStyle(textarea).height, 10);
+        const currentWidth = parseInt(window.getComputedStyle(inputTextDiv).width, 10);
+        const currentHeight = parseInt(window.getComputedStyle(inputTextDiv).height, 10);
         
         if (action === 'narrow') {
-          textarea.style.width = `${Math.max(100, currentWidth - step)}px`;
+          inputTextDiv.style.width = `${Math.max(100, currentWidth - step)}px`;
         } else if (action === 'wide') {
-          textarea.style.width = `${currentWidth + step}px`;
+          inputTextDiv.style.width = `${currentWidth + step}px`;
         } else if (action === 'short') {
-          textarea.style.height = `${Math.max(100, currentHeight - step)}px`;
+          inputTextDiv.style.height = `${Math.max(100, currentHeight - step)}px`;
         } else if (action === 'tall') {
-          textarea.style.height = `${currentHeight + step}px`;
+          inputTextDiv.style.height = `${currentHeight + step}px`;
         }
       } catch (error) {
         showError(`调整文本框大小失败: ${error.message}`);
@@ -591,9 +761,9 @@
 
     function resetTextarea() {
       try {
-        const textarea = document.getElementById('input-text');
-        textarea.style.width = initialWidth;
-        textarea.style.height = initialHeight;
+        const inputTextDiv = document.getElementById('input-text');
+        inputTextDiv.style.width = initialWidth;
+        inputTextDiv.style.height = initialHeight;
       } catch (error) {
         showError(`重置文本框失败: ${error.message}`);
       }
