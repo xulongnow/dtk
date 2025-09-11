@@ -92,6 +92,10 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      cursor: pointer; /* 添加指针样式 */
+    }
+    .grid-item:hover {
+      background-color: #f0f8ff; /* 添加悬停效果 */
     }
     .grid-item:nth-child(25n) { border-right: 1px solid red; }
     .grid-item:nth-child(100n) {
@@ -186,6 +190,16 @@
     .auto-off {
       background-color: #f44336; /* 红色表示关闭 */
       color: white;
+    }
+    
+    /* 新增：光标高亮样式 */
+    .cursor-highlight {
+      background-color: rgba(255, 255, 0, 0.5);
+      animation: blink 1s infinite;
+    }
+    
+    @keyframes blink {
+      50% { background-color: rgba(255, 255, 0, 0.2); }
     }
   </style>
 </head>
@@ -532,6 +546,7 @@
           i++;
         } else if (/[a-zA-Z0-9]/.test(text[i]) && /[a-zA-Z0-9.]/.test(text[i + 1])) {
           gridItems[gridIndex].innerText = text.substring(i, i + 2);
+          gridItems[gridIndex].dataset.sourceIndex = i; // 记录原始位置
           gridIndex++;
           i += 2;
         } else if (text[i] === '+') {
@@ -549,16 +564,19 @@
               const numSpaces = parseInt(text.substring(i + 1, j), 10);
               for (let k = 0; k < numSpaces && gridIndex < gridItems.length; k++) {
                 gridItems[gridIndex].innerText = ' ';
+                gridItems[gridIndex].dataset.sourceIndex = i; // 记录原始位置
                 gridIndex++;
               }
               i = j + 1;
             } else {
               gridItems[gridIndex].innerText = text[i];
+              gridItems[gridIndex].dataset.sourceIndex = i; // 记录原始位置
               gridIndex++;
               i++;
             }
           } else {
             gridItems[gridIndex].innerText = text[i];
+            gridItems[gridIndex].dataset.sourceIndex = i; // 记录原始位置
             gridIndex++;
             i++;
           }
@@ -568,6 +586,7 @@
               && /[，。！？；：’”、）》,.!?;:]/.test(text[i]) 
               && text[i] !== '…' && text[i] !== '—') {
             gridItems[gridIndex - 1].innerText += text[i];
+            // 对于合并的字符，不需要更新位置索引
           }
           // 引号后标点合并，同样排除省略号和破折号
           else if (gridIndex > 0 
@@ -575,9 +594,11 @@
               && /[、，。：；？！,.?!;:]/.test(text[i]) 
               && text[i] !== '…' && text[i] !== '—') {
             gridItems[gridIndex - 1].innerText += text[i];
+            // 对于合并的字符，不需要更新位置索引
           }
           else {
             gridItems[gridIndex].innerText = text[i];
+            gridItems[gridIndex].dataset.sourceIndex = i; // 记录原始位置
             gridIndex++;
           }
           i++;
@@ -725,6 +746,97 @@
       }
     }
 
+    // 新增：设置光标到指定位置
+    function setCaretToPosition(container, position) {
+      const textNodes = getTextNodes(container);
+      let total = 0;
+      
+      for (let node of textNodes) {
+        const length = node.nodeValue.length;
+        if (position >= total && position <= total + length) {
+          const range = document.createRange();
+          range.setStart(node, position - total);
+          range.collapse(true);
+          
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          container.focus();
+          
+          // 添加临时高亮效果
+          const highlight = document.createElement('span');
+          highlight.className = 'cursor-highlight';
+          highlight.appendChild(range.extractContents());
+          range.insertNode(highlight);
+          
+          // 移除高亮效果
+          setTimeout(() => {
+            if (highlight.parentNode) {
+              const parent = highlight.parentNode;
+              while (highlight.firstChild) {
+                parent.insertBefore(highlight.firstChild, highlight);
+              }
+              parent.removeChild(highlight);
+            }
+          }, 1000);
+          
+          return;
+        }
+        total += length;
+      }
+      
+      // 如果位置超出，放在最后
+      if (textNodes.length > 0) {
+        const lastNode = textNodes[textNodes.length - 1];
+        const range = document.createRange();
+        range.setStart(lastNode, lastNode.nodeValue.length);
+        range.collapse(true);
+        
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        container.focus();
+      }
+    }
+
+    // 新增：处理格子双击事件
+    function handleGridItemDoubleClick(event) {
+      const gridItem = event.target;
+      if (!gridItem.classList.contains('grid-item')) return;
+      
+      const sourceIndex = gridItem.dataset.sourceIndex;
+      if (sourceIndex === undefined) return;
+      
+      const inputTextDiv = document.getElementById('input-text');
+      
+      // 滚动页面使输入框可见
+      inputTextDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // 设置光标位置
+      setCaretToPosition(inputTextDiv, parseInt(sourceIndex));
+      
+      // 滚动输入框内部使光标位置可见
+      const range = document.createRange();
+      const sel = window.getSelection();
+      if (sel.rangeCount > 0) {
+        range.setStart(sel.anchorNode, sel.anchorOffset);
+        range.collapse(true);
+        range.getClientRects(); // 强制布局计算
+        const rect = range.getBoundingClientRect();
+        
+        // 计算输入框滚动位置
+        const containerRect = inputTextDiv.getBoundingClientRect();
+        const scrollTop = inputTextDiv.scrollTop;
+        const newScrollTop = scrollTop + (rect.top - containerRect.top) - (containerRect.height / 2);
+        
+        // 平滑滚动到光标位置
+        inputTextDiv.scrollTo({
+          top: newScrollTop,
+          behavior: 'smooth'
+        });
+      }
+    }
+
     window.onload = function() {
       try {
         const savedText = localStorage.getItem('savedText');
@@ -746,6 +858,9 @@
         // 初始高亮
         highlightDirectives();
         distributeText();
+        
+        // 添加双击事件监听器
+        document.getElementById('grid-container').addEventListener('dblclick', handleGridItemDoubleClick);
       } catch (error) {
         showError(`加载本地存储失败: ${error.message}`);
       }
