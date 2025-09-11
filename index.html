@@ -164,7 +164,20 @@
       .buttons { flex-wrap: wrap; }
       .buttons button { margin: 5px; }
     }
-    
+
+    .editable-div {
+      width: 40%;
+      height: 250px;
+      margin-bottom: 10px;
+      font-size: 18px;
+      border: 1px solid #ccc;
+      padding: 5px;
+      white-space: pre-wrap; /* 保留空白和换行 */
+      overflow: auto;
+      text-align: left; /* 确保文本左对齐 */
+      resize: both; /* 添加此行以启用拖动调整大小功能 */
+    }
+
     /* 新增：自动输入按钮样式 */
     .auto-on {
       background-color: #4CAF50; /* 绿色表示开启 */
