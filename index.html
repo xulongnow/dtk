@@ -139,7 +139,16 @@
       justify-content: center;
       align-items: center;
     }
-    .buttons button { margin: 0 10px; }
+    .buttons button { margin: 0 5px; }
+    
+    /* 新增：调整导出和导入按钮间距 */
+    .buttons button:nth-child(8) {
+      margin-right: 1px; /* 导出TXT按钮右边距设为1px */
+    }
+    .buttons button:nth-child(9) {
+      margin-left: 1px; /* 导入按钮左边距设为1px */
+    }
+    
     .count-display {
       margin-left: 10px;
       font-size: 14px;
@@ -167,6 +176,14 @@
       .grid-item { font-size: 16px; }
       .buttons { flex-wrap: wrap; }
       .buttons button { margin: 5px; }
+      
+      /* 移动端导出和导入按钮间距调整 */
+      .buttons button:nth-child(8) {
+        margin-right: 1px;
+      }
+      .buttons button:nth-child(9) {
+        margin-left: 1px;
+      }
     }
 
     .editable-div {
@@ -227,7 +244,8 @@
       <button onclick="undo()">撤销</button>
       <button id="toggle-auto-input" class="auto-on" onclick="toggleAutoInput()">自动输入·开</button>
       <button onclick="distributeText()">填入答题纸</button>
-      <button onclick="downloadText()">下载TXT</button>
+      <button onclick="downloadText()">导出TXT</button>
+      <button onclick="importText()">导入</button>
       <button onclick="window.print()">打印</button>
       <div class="count-display" id="count-display">统计字数: 0</div>
     </div>
@@ -743,6 +761,64 @@
       } catch (error) {
         console.error("下载失败:", error);
         showError(`文件下载失败: ${error.message}\n请检查浏览器权限`);
+      }
+    }
+
+    // 新增：导入TXT文件功能
+    function importText() {
+      try {
+        // 创建文件输入元素
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.txt';
+        
+        // 处理文件选择
+        fileInput.onchange = function(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+          
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            try {
+              const content = e.target.result;
+              const inputTextDiv = document.getElementById('input-text');
+              
+              // 保存光标位置
+              const caretPos = saveCaretPosition(inputTextDiv);
+              
+              // 更新文本框内容
+              inputTextDiv.innerText = content;
+              
+              // 高亮指令
+              highlightDirectives();
+              
+              // 分发文本到网格
+              distributeText();
+              
+              // 保存到本地存储
+              saveToLocalStorage();
+              
+              // 恢复光标位置
+              restoreCaretPosition(inputTextDiv, caretPos);
+              
+              // 显示成功消息
+              showError(`成功导入文件: ${file.name}`);
+            } catch (error) {
+              showError(`导入文件失败: ${error.message}`);
+            }
+          };
+          
+          reader.onerror = function() {
+            showError('读取文件失败，请检查文件格式');
+          };
+          
+          reader.readAsText(file);
+        };
+        
+        // 触发文件选择对话框
+        fileInput.click();
+      } catch (error) {
+        showError(`导入功能出错: ${error.message}`);
       }
     }
 
